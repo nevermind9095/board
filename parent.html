@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>電子聯絡簿</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#e9dcc0; --paper-hi:#f6efdd; --paper-lo:#dccdac; --edge:#c2b18d;
+  --ink:#2a231c; --ink-soft:#6b5f52; --ink-faint:#9b8d7c;
+  --seal:#b8342a; --seal-deep:#8d2119; --seal-wash:rgba(184,52,42,.09);
+  --gov:#1d4e7a; --gov-wash:rgba(29,78,122,.09);
+  --gold:#a8842c; --rule:#bcaa84;
+  --serif:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --mono:"SFMono-Regular",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;font-family:var(--sans);color:var(--ink);
+  background:#2b211a
+    radial-gradient(ellipse 120% 80% at 50% 0%, #4a3a2c 0%, #2b211a 60%, #1a1410 100%) fixed;
+  min-height:100vh;padding:0 0 40px;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:640px;margin:0 auto;padding:0 12px}
+
+.sheet{
+  background-color:var(--paper);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='.14'/%3E%3C/svg%3E"),
+    linear-gradient(165deg,var(--paper-hi) 0%,var(--paper) 45%,var(--paper-lo) 100%);
+  border:1px solid var(--edge);border-radius:3px;
+  box-shadow:0 2px 4px rgba(0,0,0,.2),0 14px 34px rgba(0,0,0,.4);
+  padding:18px 18px 22px;margin:14px 0;
+}
+
+/* 抬頭 */
+.head{border-bottom:2.5px solid var(--ink);padding-bottom:9px;margin-bottom:4px;position:relative}
+.head::after{content:'';position:absolute;left:0;right:0;bottom:-5px;height:1px;background:var(--ink)}
+.org{font-family:var(--serif);font-weight:900;font-size:1.05rem;letter-spacing:.14em;color:var(--ink)}
+.doc{font-family:var(--serif);font-weight:900;font-size:1.62rem;letter-spacing:.22em;margin-top:3px}
+.who{
+  display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap;
+}
+.who .seat{font-family:var(--mono);font-weight:700;font-size:.82rem;color:#fff;
+  background:var(--ink-soft);border-radius:2px;padding:2px 7px}
+.who .name{font-family:var(--serif);font-weight:900;font-size:1.24rem;letter-spacing:.1em}
+.who .teacher{margin-left:auto;font-size:.78rem;color:var(--ink-soft);font-family:var(--serif)}
+
+/* 日期 */
+.dateline{
+  display:flex;align-items:stretch;gap:0;margin:14px 0 4px;
+  border:1.5px solid var(--rule);border-radius:2px;overflow:hidden;background:rgba(255,255,255,.4);
+}
+.dateline button{
+  background:transparent;border:0;color:var(--ink-soft);font-size:1rem;font-weight:700;
+  padding:0 14px;cursor:pointer;font-family:var(--sans);
+}
+.dateline button:disabled{opacity:.25;cursor:default}
+.dateline button:not(:disabled):active{background:rgba(0,0,0,.07)}
+.dateline .face{
+  flex:1;text-align:center;padding:7px 4px;
+  border-left:1px solid var(--rule);border-right:1px solid var(--rule);
+}
+.dateline .d1{font-family:var(--mono);font-weight:700;font-size:1.02rem}
+.dateline .d2{font-family:var(--serif);font-size:.74rem;color:var(--ink-soft);letter-spacing:.16em}
+.stale{
+  font-family:var(--serif);font-size:.8rem;color:var(--seal-deep);
+  background:var(--seal-wash);border:1px solid rgba(184,52,42,.3);border-radius:2px;
+  padding:5px 9px;margin-top:8px;letter-spacing:.04em;
+}
+
+/* 區塊 */
+.block{margin-top:18px}
+.block-head{
+  display:flex;align-items:baseline;gap:9px;
+  border-bottom:2px solid;padding-bottom:4px;margin-bottom:9px;
+}
+.block-head .cap{font-family:var(--serif);font-weight:900;font-size:1.16rem;letter-spacing:.18em}
+.block-head .n{font-size:.74rem;color:var(--ink-soft)}
+.block-head .ct{margin-left:auto;font-family:var(--serif);font-size:.82rem;font-weight:700;
+  border:1px solid;border-radius:2px;padding:1px 8px}
+.b-new .block-head{border-color:var(--gov)}
+.b-new .cap{color:var(--gov)}
+.b-new .ct{color:var(--gov);border-color:var(--gov);background:var(--gov-wash)}
+.b-fix .block-head{border-color:var(--seal)}
+.b-fix .cap{color:var(--seal-deep)}
+.b-fix .ct{color:var(--seal-deep);border-color:var(--seal);background:var(--seal-wash)}
+
+ul.items{list-style:none;padding:0;margin:0}
+ul.items li{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:9px 2px;border-bottom:1px dotted rgba(107,95,82,.3);
+  font-family:var(--serif);font-size:1.16rem;font-weight:700;line-height:1.5;
+}
+ul.items li:last-child{border-bottom:0}
+.bullet{
+  flex:0 0 auto;font-family:var(--mono);font-size:.78rem;font-weight:700;
+  border:1.5px solid;border-radius:2px;padding:1px 5px;margin-top:.28em;min-width:1.8em;text-align:center;
+}
+.b-new .bullet{color:var(--gov);border-color:var(--gov)}
+.b-new li.flag{color:var(--seal-deep)}
+.b-new li.flag .bullet{color:#fff;background:var(--seal);border-color:var(--seal-deep)}
+.b-fix .bullet{color:var(--seal);border-color:var(--seal)}
+.b-fix li{color:var(--seal-deep)}
+.b-fix li.ok{color:var(--ink-soft)}
+.b-fix li.ok .txt{text-decoration:line-through;text-decoration-color:rgba(107,95,82,.5)}
+.txt{flex:1;min-width:0}
+.mark{
+  flex:0 0 auto;font-family:var(--serif);font-weight:900;font-size:.86rem;letter-spacing:.1em;
+  border:2px solid var(--seal);color:var(--seal);border-radius:2px;padding:0 6px;
+  transform:rotate(-6deg);margin-top:.2em;
+}
+.pend{
+  flex:0 0 auto;font-family:var(--sans);font-size:.78rem;font-weight:500;
+  color:var(--ink-faint);border:1px dashed var(--rule);border-radius:2px;
+  padding:2px 7px;margin-top:.24em;white-space:nowrap;
+}
+.empty{font-family:var(--serif);font-style:italic;color:var(--ink-faint);
+  letter-spacing:.1em;padding:12px 0;font-size:1rem}
+
+/* 補件提醒 */
+.owing{
+  margin-top:18px;border:2px solid var(--seal);border-radius:2px;
+  background:rgba(255,246,244,.75);overflow:hidden;
+}
+.owing .oh{
+  background:linear-gradient(180deg,#c14538,#93241b);color:#fff;
+  font-family:var(--serif);font-weight:900;letter-spacing:.16em;font-size:.98rem;
+  padding:6px 12px;
+}
+.owing ul{list-style:none;margin:0;padding:9px 12px}
+.owing li{font-family:var(--serif);font-size:1.04rem;font-weight:700;color:var(--seal-deep);
+  padding:5px 0;border-bottom:1px dotted #e2b8b2}
+.owing li:last-child{border-bottom:0}
+.owing li::before{content:'▸ ';color:var(--seal)}
+.owing .on{padding:9px 12px 11px;font-size:.82rem;color:#8a5a54;font-family:var(--sans);line-height:1.7}
+
+.watch{
+  margin-top:14px;border:1px solid var(--gold);background:rgba(168,132,44,.1);
+  border-radius:2px;padding:8px 12px;font-family:var(--serif);font-size:.95rem;color:#6b5312;
+}
+
+/* 最近進度 */
+.hist{margin-top:20px;border-top:1px solid var(--rule);padding-top:11px}
+.hist .ht{font-family:var(--serif);font-weight:700;font-size:.86rem;letter-spacing:.14em;
+  color:var(--ink-soft);margin-bottom:8px}
+.bars{display:flex;gap:5px;align-items:flex-end;overflow-x:auto;padding-bottom:3px}
+.bar{flex:0 0 auto;width:34px;text-align:center}
+.bar .col{height:44px;display:flex;align-items:flex-end;justify-content:center}
+.bar .fill{width:16px;background:var(--seal);border-radius:1px 1px 0 0;min-height:2px;opacity:.85}
+.bar .fill.full{background:var(--gold)}
+.bar .lb{font-family:var(--mono);font-size:.6rem;color:var(--ink-faint);margin-top:3px}
+.bar .vl{font-family:var(--mono);font-size:.64rem;color:var(--ink-soft);font-weight:700}
+
+.foot{
+  text-align:center;color:#8d7f6c;font-size:.74rem;line-height:1.9;
+  font-family:var(--sans);margin-top:6px;
+}
+.foot b{color:#a5957e}
+
+/* 狀態畫面 */
+.state{text-align:center;padding:34px 16px}
+.state .ic{font-size:2.4rem;margin-bottom:10px}
+.state .t{font-family:var(--serif);font-weight:900;font-size:1.24rem;letter-spacing:.14em;margin-bottom:9px}
+.state .d{color:var(--ink-soft);font-size:.95rem;line-height:1.9}
+.state .btn{
+  margin-top:16px;font-family:var(--serif);font-weight:700;letter-spacing:.1em;
+  background:linear-gradient(180deg,#f2e9d3,#ddcfae);border:1.5px solid var(--rule);
+  border-radius:2px;padding:8px 18px;cursor:pointer;color:var(--ink);
+}
+.spin{
+  width:26px;height:26px;margin:0 auto 12px;border-radius:50%;
+  border:3px solid rgba(107,95,82,.25);border-top-color:var(--seal);
+  animation:sp .8s linear infinite;
+}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+@media (min-width:520px){
+  ul.items li{font-size:1.3rem}
+  .doc{font-size:1.86rem}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="sheet" id="sheet">
+    <div class="state">
+      <div class="spin"></div>
+      <div class="d">讀取中…</div>
+    </div>
+  </div>
+  <div class="foot" id="foot"></div>
+</div>
+
+<script>
+"use strict";
+/* =====================================================================
+   後端位址從連結本身取得：
+     ?s=指令碼ID      →  自動組成 https://script.google.com/macros/s/<ID>/exec
+     ?api=完整網址    →  直接使用（自架後端時用）
+   老師在程式裡按「複製連結」時就會自動帶好，不需要修改這個檔案。
+
+   如果你是自己架一份、而且全校只服務一個班，
+   也可以把網址寫死在下面這一行，連結就能短一點。
+   ===================================================================== */
+var ENDPOINT = "";
+
+/* --------------------------------------------------------------- */
+var LEX = {
+  corp:  { brief:"今日工作單", newCap:"本日接案", fixCap:"本日待簽核", stamp:"核准",
+           owe:"補件提醒", fixWord:"補件", pend:"尚未完成" },
+  gov:   { brief:"今日交辦單", newCap:"本日交辦", fixCap:"本日陳核案件", stamp:"照准",
+           owe:"補正提醒", fixWord:"補正", pend:"尚未完成" },
+  qc:    { brief:"今日生產單", newCap:"本日投產", fixCap:"本日待檢驗", stamp:"允收",
+           owe:"修正提醒", fixWord:"修正", pend:"尚未完成" },
+  plain: { brief:"今日聯絡簿", newCap:"今日作業", fixCap:"今日訂正", stamp:"完成",
+           owe:"補交提醒", fixWord:"補交", pend:"還沒完成" }
+};
+var W = ["日","一","二","三","四","五","六"];
+
+function qs(k) {
+  var m = new RegExp("[?&]" + k + "=([^&#]*)").exec(location.search);
+  return m ? decodeURIComponent(m[1]) : "";
+}
+var CODE = (qs("p") || qs("code")).trim().toUpperCase();
+var SID  = qs("s").trim();
+var API  = (qs("api") || (SID ? "https://script.google.com/macros/s/" + SID + "/exec" : "")
+            || ENDPOINT).trim();
+var viewDate = "";
+
+function el(tag, cls, txt) {
+  var e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (txt != null) e.textContent = txt;
+  return e;
+}
+
+function state(icon, title, desc, retry) {
+  var s = document.getElementById("sheet");
+  s.textContent = "";
+  var b = el("div", "state");
+  if (icon) b.appendChild(el("div", "ic", icon));
+  if (title) b.appendChild(el("div", "t", title));
+  var d = el("div", "d");
+  String(desc || "").split("\n").forEach(function (line, i) {
+    if (i) d.appendChild(document.createElement("br"));
+    d.appendChild(document.createTextNode(line));
+  });
+  b.appendChild(d);
+  if (retry) {
+    var btn = el("button", "btn", "再試一次");
+    btn.addEventListener("click", function () { load(viewDate); });
+    b.appendChild(btn);
+  }
+  s.appendChild(b);
+  document.getElementById("foot").textContent = "";
+}
+
+function loading() {
+  var s = document.getElementById("sheet");
+  s.textContent = "";
+  var b = el("div", "state");
+  b.appendChild(el("div", "spin"));
+  b.appendChild(el("div", "d", "讀取中…"));
+  s.appendChild(b);
+}
+
+function load(date) {
+  if (!CODE) {
+    state("🔑", "缺少代碼",
+      "這個連結沒有帶到查詢代碼。\n請直接使用老師提供的完整連結。");
+    return;
+  }
+  if (!API) {
+    state("🔗", "連結不完整",
+      "這個連結少了老師端的位址。\n請跟老師索取完整的連結（網址裡應該要有 &s= 這一段）。");
+    return;
+  }
+  loading();
+  var payload = { action: "parent", code: CODE };
+  if (date) payload.date = date;
+
+  fetch(API, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(payload)
+  })
+  .then(function (r) { return r.json(); })
+  .then(function (r) {
+    if (r && r.ok) { render(r); return; }
+    var reason = r && r.reason;
+    if (reason === "closed") {
+      state("🔒", "尚未開放",
+        "老師目前沒有開放家長檢視。\n開放之後，這個連結就會顯示內容。");
+    } else if (reason === "bad") {
+      state("🔍", "查不到這組代碼",
+        "代碼可能已經重新產生過了。\n請跟老師索取新的連結。");
+    } else if (reason === "nodata") {
+      state("📭", "還沒有資料", "老師還沒有上傳任何紀錄。");
+    } else {
+      state("⚠️", "讀取失敗", (r && r.error) || "請稍後再試一次。", true);
+    }
+  })
+  .catch(function () {
+    state("📡", "連線失敗",
+      "請確認網路連線後再試一次。", true);
+  });
+}
+
+function render(r) {
+  viewDate = r.date;
+  var L = LEX[r.lex] || LEX.corp;
+  var s = document.getElementById("sheet");
+  s.textContent = "";
+
+  /* ---- 抬頭 ---- */
+  var head = el("div", "head");
+  if (r.org.name) head.appendChild(el("div", "org", r.org.name));
+  head.appendChild(el("div", "doc", L.brief));
+  s.appendChild(head);
+
+  var who = el("div", "who");
+  if (r.student.seat !== "") who.appendChild(el("span", "seat", r.student.seat));
+  who.appendChild(el("span", "name", r.student.name));
+  if (r.org.teacher) who.appendChild(el("span", "teacher", "承辦：" + r.org.teacher));
+  s.appendChild(who);
+
+  /* ---- 日期切換 ---- */
+  var dates = r.dates || [];
+  var idx = dates.indexOf(r.date);
+  var line = el("div", "dateline");
+  var prev = el("button", null, "◀");
+  prev.disabled = idx <= 0;
+  prev.addEventListener("click", function () { load(dates[idx - 1]); });
+  var next = el("button", null, "▶");
+  next.disabled = idx < 0 || idx >= dates.length - 1;
+  next.addEventListener("click", function () { load(dates[idx + 1]); });
+  var face = el("div", "face");
+  var dt = new Date(r.date.replace(/-/g, "/"));
+  face.appendChild(el("div", "d1",
+    (dt.getFullYear() - 1911) + "年" + (dt.getMonth() + 1) + "月" + dt.getDate() + "日"));
+  face.appendChild(el("div", "d2",
+    "星期" + W[dt.getDay()] + (r.date === r.today ? "．今日" : "")));
+  line.appendChild(prev); line.appendChild(face); line.appendChild(next);
+  s.appendChild(line);
+
+  if (r.date < r.today) {
+    s.appendChild(el("div", "stale", "今天還沒有發布，以下是 " + r.date + " 的內容。"));
+  } else if (r.date > r.today) {
+    s.appendChild(el("div", "stale", "以下是老師預先發布的 " + r.date + " 內容。"));
+  }
+
+  /* ---- 本日接案 ---- */
+  var bn = el("div", "block b-new");
+  var bh = el("div", "block-head");
+  bh.appendChild(el("span", "cap", L.newCap));
+  bh.appendChild(el("span", "n", "（要抄進聯絡簿的項目）"));
+  bh.appendChild(el("span", "ct", r.notes.length + " 件"));
+  bn.appendChild(bh);
+  if (!r.notes.length) {
+    bn.appendChild(el("div", "empty", "本日沒有新的項目。"));
+  } else {
+    var ul = el("ul", "items");
+    r.notes.forEach(function (n, i) {
+      var li = el("li", n.flag ? "flag" : null);
+      li.appendChild(el("span", "bullet", i + 1));
+      li.appendChild(el("span", "txt", n.text));
+      ul.appendChild(li);
+    });
+    bn.appendChild(ul);
+  }
+  s.appendChild(bn);
+
+  /* ---- 待簽核 ---- */
+  var doneN = r.cases.filter(function (c) { return c.done; }).length;
+  var bf = el("div", "block b-fix");
+  var bh2 = el("div", "block-head");
+  bh2.appendChild(el("span", "cap", L.fixCap));
+  bh2.appendChild(el("span", "n", "（訂正完成後由老師確認）"));
+  bh2.appendChild(el("span", "ct", doneN + " / " + r.cases.length));
+  bf.appendChild(bh2);
+  if (!r.cases.length) {
+    bf.appendChild(el("div", "empty", "本日沒有需要訂正的項目。"));
+  } else {
+    var ul2 = el("ul", "items");
+    r.cases.forEach(function (c, i) {
+      var li = el("li", c.done ? "ok" : null);
+      li.appendChild(el("span", "bullet", i + 1));
+      li.appendChild(el("span", "txt", c.text));
+      li.appendChild(c.done ? el("span", "mark", L.stamp) : el("span", "pend", L.pend));
+      ul2.appendChild(li);
+    });
+    bf.appendChild(ul2);
+  }
+  s.appendChild(bf);
+
+  /* ---- 補件提醒 ---- */
+  if (r.owing && r.owing.length) {
+    var ow = el("div", "owing");
+    ow.appendChild(el("div", "oh", L.owe + "　共 " + r.owing.length + " 項"));
+    var ul3 = el("ul");
+    r.owing.forEach(function (t) { ul3.appendChild(el("li", null, t)); });
+    ow.appendChild(ul3);
+    ow.appendChild(el("div", "on",
+      "這些是累積比較久、還沒" + L.fixWord + "完成的項目。補齊之後老師就會把它結案。"));
+    s.appendChild(ow);
+  }
+  if (r.watched) {
+    s.appendChild(el("div", "watch", "老師今天特別把孩子列入提醒名單，麻煩多留意一下進度。"));
+  }
+
+  /* ---- 最近進度 ---- */
+  if (r.history && r.history.length > 1) {
+    var h = el("div", "hist");
+    h.appendChild(el("div", "ht", "最近的完成情形"));
+    var bars = el("div", "bars");
+    r.history.forEach(function (d) {
+      var pct = d.total ? d.done / d.total : 0;
+      var b = el("div", "bar");
+      var col = el("div", "col");
+      var fill = el("div", "fill" + (pct >= 1 ? " full" : ""));
+      fill.style.height = Math.max(2, Math.round(pct * 44)) + "px";
+      col.appendChild(fill);
+      b.appendChild(col);
+      b.appendChild(el("div", "vl", d.done + "/" + d.total));
+      b.appendChild(el("div", "lb", d.date.slice(5).replace("-", "/")));
+      bars.appendChild(b);
+    });
+    h.appendChild(bars);
+    s.appendChild(h);
+  }
+
+  document.getElementById("foot").innerHTML =
+    "這一頁只顯示 <b>" + r.student.name.replace(/[<>&]/g, "") +
+    "</b> 一位同學的資料，看不到班上其他人。<br>如有疑問請與導師聯絡。";
+}
+
+load("");
+</script>
+</body>
+</html>

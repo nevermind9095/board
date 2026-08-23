@@ -1,0 +1,2837 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>業務進度板</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+/* =====================================================================
+   業務進度板  ——  公文卷宗視覺系統
+   ===================================================================== */
+:root{
+  /* 紙 */
+  --paper:        #e6d9bc;
+  --paper-hi:     #f4ecd8;
+  --paper-lo:     #d6c6a4;
+  --paper-edge:   #bfae8a;
+  /* 桌面 */
+  --desk:         #3b2f26;
+  --desk-dark:    #241c16;
+  /* 墨 */
+  --ink:          #2a231c;
+  --ink-soft:     #6b5f52;
+  --ink-faint:    #9b8d7c;
+  /* 朱砂 */
+  --seal:         #b8342a;
+  --seal-deep:    #8d2119;
+  --seal-wash:    rgba(184,52,42,.10);
+  /* 公文藍 */
+  --gov:          #1d4e7a;
+  --gov-wash:     rgba(29,78,122,.10);
+  /* 金 */
+  --gold:         #a8842c;
+  --gold-hi:      #e0c268;
+  /* 線 */
+  --rule:         #b9a781;
+  --rule-soft:    rgba(107,95,82,.28);
+
+  --serif: "Noto Serif TC","Songti TC","SimSun","PMingLiU",serif;
+  --sans:  "Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --mono:  "SFMono-Regular",Menlo,Consolas,monospace;
+
+  --shadow-paper: 0 1px 2px rgba(0,0,0,.18), 0 8px 24px rgba(0,0,0,.28);
+  --shadow-lift:  0 2px 4px rgba(0,0,0,.2), 0 14px 34px rgba(0,0,0,.34);
+}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:var(--sans);
+  color:var(--ink);
+  background-color:var(--desk-dark);
+  background-image:
+    /* 桌面木紋 */
+    repeating-linear-gradient(94deg,
+      rgba(255,255,255,.020) 0px, rgba(255,255,255,.020) 1px,
+      transparent 1px, transparent 4px),
+    repeating-linear-gradient(90deg,
+      rgba(0,0,0,.16) 0px, rgba(0,0,0,.16) 2px,
+      transparent 2px, transparent 9px),
+    radial-gradient(ellipse 120% 90% at 50% 0%, #4a3a2c 0%, #2b211a 60%, #1a1410 100%);
+  display:flex;flex-direction:column;
+  height:100vh;overflow:hidden;
+  user-select:none;
+}
+
+/* 紙張纖維紋理（共用 class） */
+.paper{
+  background-color:var(--paper);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E"),
+    linear-gradient(160deg, var(--paper-hi) 0%, var(--paper) 42%, var(--paper-lo) 100%);
+}
+
+/* =====================  頁首：公文抬頭  ===================== */
+header{
+  flex:0 0 auto;
+  background:linear-gradient(180deg,#4a3b2d 0%,#33281f 100%);
+  border-bottom:3px solid var(--desk-dark);
+  box-shadow:0 6px 18px rgba(0,0,0,.55);
+  padding:0 18px;
+  display:flex;align-items:center;gap:18px;
+  height:64px;
+  position:relative;z-index:60;
+}
+header::after{
+  content:'';position:absolute;left:0;right:0;bottom:-3px;height:3px;
+  background:linear-gradient(90deg,var(--gold) 0%,transparent 22%,transparent 78%,var(--gold) 100%);
+  opacity:.5;
+}
+
+.masthead{display:flex;align-items:baseline;gap:10px;min-width:0}
+.masthead .org{
+  font-family:var(--serif);font-weight:900;font-size:1.32rem;letter-spacing:.14em;
+  color:#f0e3c6;text-shadow:0 2px 0 rgba(0,0,0,.5);white-space:nowrap;
+}
+.masthead .org .mark{color:var(--gold-hi)}
+.masthead .sub{
+  font-family:var(--serif);font-size:.82rem;letter-spacing:.22em;color:#b9a887;white-space:nowrap;
+}
+
+/* 日期導覽 —— 做成一枚日期戳 */
+.datestamp{
+  display:flex;align-items:stretch;
+  border:1.5px solid #8a7255;border-radius:3px;overflow:hidden;
+  background:rgba(0,0,0,.28);
+}
+.datestamp button{
+  background:transparent;border:0;color:#d9c69c;cursor:pointer;
+  padding:0 9px;font-size:.9rem;font-weight:700;
+  transition:background .15s,color .15s;
+}
+.datestamp button:hover{background:rgba(255,255,255,.12);color:#fff}
+.datestamp .face{
+  padding:5px 12px;text-align:center;min-width:158px;
+  border-left:1px solid rgba(255,255,255,.14);
+  border-right:1px solid rgba(255,255,255,.14);
+  cursor:pointer;
+}
+.datestamp .face:hover{background:rgba(255,255,255,.07)}
+.datestamp .ymd{font-family:var(--mono);font-size:1.02rem;font-weight:700;color:#fff;letter-spacing:.04em;line-height:1.15}
+.datestamp .dow{font-family:var(--serif);font-size:.7rem;color:#c0ad8b;letter-spacing:.2em}
+
+.spacer{flex:1}
+
+/* 分頁 —— 卷宗索引標籤 */
+.tabs{display:flex;align-items:flex-end;gap:3px;align-self:flex-end;height:100%}
+.tab{
+  font-family:var(--serif);font-weight:700;font-size:.98rem;letter-spacing:.1em;
+  padding:8px 17px 9px;cursor:pointer;
+  color:#c5b391;background:linear-gradient(180deg,#5a4835,#43352a);
+  border:1px solid #241c16;border-bottom:0;
+  border-radius:7px 7px 0 0;
+  position:relative;top:1px;
+  transition:all .16s;white-space:nowrap;
+}
+.tab:hover{color:#f2e6c9;background:linear-gradient(180deg,#6b563f,#4d3d2f)}
+.tab.on{
+  color:var(--ink);background:linear-gradient(180deg,var(--paper-hi),var(--paper));
+  padding-bottom:12px;box-shadow:0 -3px 10px rgba(0,0,0,.3);
+}
+.tab.on::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:4px;background:var(--paper-hi)}
+
+/* 連線狀態章 */
+.linkchip{
+  display:flex;align-items:center;gap:6px;
+  font-family:var(--serif);font-size:.78rem;letter-spacing:.1em;font-weight:700;
+  padding:5px 11px;border-radius:2px;cursor:pointer;
+  border:1.5px solid;transition:filter .15s;
+}
+.linkchip:hover{filter:brightness(1.16)}
+.linkchip .dot{width:7px;height:7px;border-radius:50%}
+.link-local{color:#d9c69c;border-color:#8a7255;background:rgba(0,0,0,.26)}
+.link-local .dot{background:#8a7255}
+.link-live{color:#bfe3c0;border-color:#4a7d4e;background:rgba(40,80,44,.42)}
+.link-live .dot{background:#7fd486;box-shadow:0 0 7px #7fd486}
+.link-warn{color:#f0cfa0;border-color:#9a6a2c;background:rgba(96,62,20,.5)}
+.link-warn .dot{background:#e0a34a}
+
+/* =====================  主體  ===================== */
+main{flex:1;min-height:0;padding:14px 16px 16px;display:flex}
+.view{
+  flex:1;min-height:0;display:none;flex-direction:column;
+  border-radius:3px;
+  border:1px solid var(--paper-edge);
+  box-shadow:var(--shadow-paper);
+  position:relative;
+  padding:16px 20px 18px;
+}
+.view.on{display:flex;animation:sheetIn .26s cubic-bezier(.22,.9,.3,1.05)}
+@keyframes sheetIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+
+/* 左側裝訂孔 */
+.view::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:34px;
+  background:
+    radial-gradient(circle at 17px 16%, rgba(0,0,0,.30) 0 6.5px, transparent 7px),
+    radial-gradient(circle at 17px 50%, rgba(0,0,0,.30) 0 6.5px, transparent 7px),
+    radial-gradient(circle at 17px 84%, rgba(0,0,0,.30) 0 6.5px, transparent 7px),
+    linear-gradient(90deg, rgba(0,0,0,.07), transparent 60%);
+  border-right:1px solid rgba(107,95,82,.2);
+  pointer-events:none;
+}
+.view > *{margin-left:24px}
+
+/* 公文標題列 */
+.sheet-head{
+  flex:0 0 auto;display:flex;align-items:flex-end;gap:14px;
+  padding-bottom:8px;margin-bottom:12px;
+  border-bottom:2.5px solid var(--ink);
+  position:relative;
+}
+.sheet-head::after{
+  content:'';position:absolute;left:0;right:0;bottom:-5px;height:1px;background:var(--ink);
+}
+.sheet-title{
+  font-family:var(--serif);font-weight:900;font-size:1.72rem;letter-spacing:.2em;color:var(--ink);
+}
+.sheet-meta{
+  font-family:var(--mono);font-size:.82rem;color:var(--ink-soft);letter-spacing:.05em;
+  display:flex;gap:16px;align-items:center;
+}
+.sheet-tools{margin-left:auto;display:flex;gap:8px;align-items:center}
+
+/* 按鈕 —— 公文用印風 */
+.btn{
+  font-family:var(--serif);font-weight:700;font-size:.92rem;letter-spacing:.1em;
+  padding:7px 15px;cursor:pointer;
+  color:var(--ink);background:linear-gradient(180deg,#f2e9d3,#ddcfae);
+  border:1.5px solid var(--rule);border-radius:2px;
+  box-shadow:0 2px 0 rgba(107,95,82,.35);
+  transition:transform .1s,box-shadow .1s,filter .15s;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.btn:hover{filter:brightness(1.05)}
+.btn:active{transform:translateY(2px);box-shadow:none}
+.btn-seal{color:#fff;background:linear-gradient(180deg,#c4483c,#a12b21);border-color:var(--seal-deep);box-shadow:0 2px 0 #6e1811}
+.btn-gov{color:#fff;background:linear-gradient(180deg,#2a6396,#1a4569);border-color:#123049;box-shadow:0 2px 0 #0d2337}
+.btn-ghost{background:transparent;border-style:dashed;color:var(--ink-soft);box-shadow:none}
+.btn-sm{padding:4px 10px;font-size:.82rem}
+
+/* =====================  營運月報（月曆）  ===================== */
+.cal-grid{
+  flex:1;min-height:0;display:grid;grid-template-columns:repeat(7,1fr);
+  grid-template-rows:24px;grid-auto-rows:1fr;gap:7px;overflow:auto;padding-right:4px;
+}
+.cal-dow{
+  grid-row:1;text-align:center;font-family:var(--serif);font-weight:700;
+  font-size:.9rem;letter-spacing:.28em;color:var(--ink-soft);
+  border-bottom:1.5px solid var(--rule);padding-bottom:3px;
+  align-self:end;
+}
+.cal-dow.wk{color:var(--seal)}
+.cal-cell{
+  background:rgba(255,255,255,.34);
+  border:1px solid var(--rule);border-radius:2px;
+  padding:6px 7px;cursor:pointer;position:relative;overflow:hidden;
+  display:flex;flex-direction:column;gap:3px;
+  transition:transform .12s,box-shadow .12s,background .12s;
+  min-height:76px;
+}
+.cal-cell:hover{background:rgba(255,255,255,.7);transform:translateY(-2px);box-shadow:var(--shadow-lift);z-index:3}
+.cal-cell.void{background:transparent;border:1px dashed rgba(185,167,129,.4);cursor:default;pointer-events:none}
+.cal-cell.wk{background:rgba(184,52,42,.05)}
+.cal-cell.today{border:2px solid var(--seal);background:rgba(255,255,255,.62)}
+.cal-cell.today::after{
+  content:'今日';position:absolute;top:4px;right:4px;
+  font-family:var(--serif);font-size:.62rem;letter-spacing:.14em;font-weight:700;
+  color:#fff;background:var(--seal);padding:1px 5px;border-radius:1px;
+}
+.cal-num{font-family:var(--mono);font-size:1.18rem;font-weight:700;color:var(--ink);line-height:1}
+.cal-cell.wk .cal-num{color:var(--seal-deep)}
+.cal-tag{
+  font-family:var(--serif);font-size:.72rem;font-weight:700;letter-spacing:.06em;
+  padding:1px 6px;border-radius:1px;border:1px solid;line-height:1.35;
+  align-self:flex-start;
+}
+.tag-clear{color:var(--seal-deep);border-color:var(--seal);background:var(--seal-wash)}
+.tag-open {color:var(--gov);border-color:var(--gov);background:var(--gov-wash)}
+.tag-note {color:var(--ink-soft);border-color:var(--rule-soft);background:rgba(107,95,82,.06)}
+.cal-mini{font-family:var(--sans);font-size:.68rem;color:var(--ink-soft);letter-spacing:.02em}
+.cal-mini b{color:var(--seal-deep)}
+.streak{
+  font-family:var(--serif);font-weight:900;letter-spacing:.12em;font-size:.8rem;
+  color:#3a2c08;background:linear-gradient(180deg,var(--gold-hi),var(--gold));
+  border:1px solid #6d5518;border-radius:1px;padding:2px 9px;margin-left:4px;
+  box-shadow:0 0 8px rgba(224,194,104,.5);
+}
+/* 彩蛋：加班中 */
+.overtime{
+  position:fixed;right:26px;bottom:26px;z-index:800;
+  width:118px;height:118px;border-radius:50%;
+  border:5px solid var(--seal);color:var(--seal);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-family:var(--serif);font-weight:900;letter-spacing:.14em;
+  background:rgba(244,236,216,.9);cursor:pointer;
+  transform:rotate(-12deg);box-shadow:inset 0 0 0 3px rgba(184,52,42,.45),0 6px 20px rgba(0,0,0,.4);
+  animation:bigStamp .55s cubic-bezier(.2,1.5,.35,1);
+}
+.overtime .a{font-size:1.42rem}
+.overtime .b{font-size:.68rem;letter-spacing:.2em;margin-top:4px;opacity:.85}
+
+/* =====================  今日派工單（投影）  ===================== */
+.brief{flex:1;min-height:0;display:flex;flex-direction:column;gap:12px}
+.brief-block{
+  border:1.5px solid var(--rule);border-radius:2px;
+  background:rgba(255,255,255,.3);
+  padding:10px 16px 12px;
+  display:flex;flex-direction:column;min-height:0;
+  cursor:pointer;position:relative;
+  transition:background .16s,border-color .16s;
+}
+.brief-block:hover{background:rgba(255,255,255,.56);border-color:var(--ink-soft)}
+.brief-block .edit-hint{
+  position:absolute;top:7px;left:50%;transform:translateX(-50%);
+  opacity:0;transition:opacity .16s;
+  font-family:var(--serif);font-size:.78rem;letter-spacing:.1em;color:var(--ink-soft);
+  border:1px dashed var(--rule);padding:2px 8px;border-radius:2px;background:rgba(255,255,255,.7);
+}
+.brief-block:hover .edit-hint{opacity:1}
+.block-new{flex:2.1}
+.block-fix{flex:1.35}
+
+.block-head{
+  flex:0 0 auto;display:flex;align-items:center;gap:12px;
+  padding-bottom:5px;margin-bottom:8px;border-bottom:2px solid;
+}
+.block-head .cap{
+  font-family:var(--serif);font-weight:900;letter-spacing:.22em;font-size:1.44rem;
+}
+.block-head .num{
+  font-family:var(--mono);font-size:.82rem;letter-spacing:.06em;color:var(--ink-soft);
+}
+.block-head .count{
+  margin-left:auto;font-family:var(--serif);font-size:.92rem;letter-spacing:.1em;
+  padding:2px 10px;border:1px solid;border-radius:2px;font-weight:700;
+}
+.block-new .block-head{border-color:var(--gov)}
+.block-new .cap{color:var(--gov)}
+.block-new .count{color:var(--gov);border-color:var(--gov);background:var(--gov-wash)}
+.block-fix .block-head{border-color:var(--seal)}
+.block-fix .cap{color:var(--seal-deep)}
+.block-fix .count{color:var(--seal-deep);border-color:var(--seal);background:var(--seal-wash)}
+
+.item-cols{flex:1;min-height:0;overflow:auto;column-gap:34px;padding-top:2px}
+.block-new .item-cols{column-count:3}
+.block-fix .item-cols{column-count:3}
+.item{
+  break-inside:avoid;display:flex;align-items:flex-start;gap:9px;
+  padding:5px 0;line-height:1.34;
+}
+.item .bullet{
+  flex:0 0 auto;font-family:var(--mono);font-weight:700;
+  border:1.5px solid;border-radius:2px;text-align:center;
+  padding:0 4px;min-width:1.9em;
+}
+.block-new .item{font-family:var(--serif);font-size:2.02em;font-weight:700;color:var(--ink)}
+.block-new .item .bullet{color:var(--gov);border-color:var(--gov);font-size:.56em;margin-top:.38em}
+.block-new .item.flag{color:var(--seal-deep)}
+.block-new .item.flag .bullet{color:#fff;background:var(--seal);border-color:var(--seal-deep)}
+.block-fix .item{font-family:var(--serif);font-size:1.58em;font-weight:700;color:var(--seal-deep)}
+.block-fix .item .bullet{color:var(--seal);border-color:var(--seal);font-size:.62em;margin-top:.34em}
+.item .carry{
+  font-family:var(--sans);font-size:.6em;font-weight:700;letter-spacing:.1em;
+  color:#fff;background:var(--seal);padding:1px 6px;border-radius:2px;
+  margin-left:8px;vertical-align:middle;white-space:nowrap;
+}
+.empty-line{
+  font-family:var(--serif);font-size:1.16rem;color:var(--ink-faint);
+  letter-spacing:.16em;padding:14px 0;font-style:italic;
+}
+
+/* 續辦事項紙條 */
+.carryover{
+  flex:0 0 auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  border:1px solid var(--rule);border-left:5px solid var(--seal);
+  background:rgba(255,255,255,.4);
+  padding:7px 14px;border-radius:2px;
+}
+.carryover .cap{
+  font-family:var(--serif);font-weight:900;letter-spacing:.16em;font-size:.98rem;
+  color:var(--seal-deep);white-space:nowrap;
+  border-right:1px solid var(--rule);padding-right:12px;
+}
+.carryover .grp{display:flex;align-items:baseline;gap:7px;font-size:.95rem}
+.carryover .k{font-family:var(--serif);font-weight:700;color:var(--ink)}
+.carryover .who{font-family:var(--sans);color:var(--seal-deep);font-weight:500;font-size:.9rem}
+.carryover .sep{color:var(--ink-faint);font-size:.85rem}
+.carryover .btn{margin-left:auto}
+
+/* =====================  結案進度（名冊）  ===================== */
+.board{
+  flex:1;min-height:0;overflow:auto;padding-right:4px;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(468px,1fr));
+  gap:14px;align-content:start;
+}
+/* 卷宗夾 */
+.folder{
+  background:linear-gradient(178deg,rgba(255,255,255,.5),rgba(255,255,255,.28));
+  border:1.5px solid var(--rule);border-radius:2px 2px 3px 3px;
+  display:flex;flex-direction:column;height:fit-content;
+  box-shadow:0 2px 5px rgba(0,0,0,.14);
+  position:relative;transition:box-shadow .15s,border-color .15s;
+}
+.folder.drop{border-color:var(--gov);border-style:dashed;box-shadow:0 0 0 3px var(--gov-wash)}
+.folder.clear{border-color:var(--gold);box-shadow:0 0 0 2px rgba(168,132,44,.24),0 2px 8px rgba(0,0,0,.18)}
+.folder-tab{
+  display:flex;align-items:center;gap:9px;
+  background:linear-gradient(180deg,#5c4a37,#42352a);
+  color:#f0e3c6;padding:5px 11px;cursor:pointer;
+  border-bottom:2px solid #241c16;
+  transition:filter .15s;
+}
+.folder-tab:hover{filter:brightness(1.18)}
+.folder.clear .folder-tab{background:linear-gradient(180deg,#7d6425,#57441a)}
+.folder-tab .fname{font-family:var(--serif);font-weight:900;font-size:1.1rem;letter-spacing:.14em}
+.folder-tab .fcode{font-family:var(--mono);font-size:.7rem;color:#bfae8a;letter-spacing:.06em}
+.folder-tab .fstat{
+  margin-left:auto;font-family:var(--mono);font-size:.76rem;color:#cbb994;letter-spacing:.04em;
+}
+.pennant{
+  margin-left:auto;display:none;align-items:center;gap:5px;
+  font-family:var(--serif);font-weight:900;font-size:.78rem;letter-spacing:.14em;
+  color:#3a2c08;background:linear-gradient(180deg,var(--gold-hi),var(--gold));
+  padding:2px 9px;border-radius:1px;border:1px solid #6d5518;
+  box-shadow:0 0 9px rgba(224,194,104,.55);
+}
+.folder.clear .pennant{display:flex;animation:pennantIn .45s cubic-bezier(.2,1.5,.4,1)}
+.folder.clear .fstat{display:none}
+@keyframes pennantIn{from{transform:scale(.4) rotate(-9deg);opacity:0}to{transform:none;opacity:1}}
+
+.roster{padding:5px 7px 7px;display:flex;flex-direction:column;gap:3px}
+.rrow{
+  display:flex;align-items:center;gap:7px;
+  padding:2px 3px;border-bottom:1px dotted var(--rule-soft);
+  min-height:36px;cursor:grab;
+}
+.rrow:last-child{border-bottom:0}
+.rrow.dragging{opacity:.35}
+.rrow .seat{
+  font-family:var(--mono);font-size:.82rem;font-weight:700;color:#fff;
+  background:var(--ink-soft);border-radius:2px;padding:1px 5px;min-width:26px;text-align:center;
+}
+.rrow .who{
+  font-family:var(--serif);font-weight:700;font-size:1.12rem;color:var(--ink);
+  width:5.2em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 0 auto;
+}
+.rrow.watched .who{color:var(--seal-deep)}
+.rrow.watched .seat{background:var(--seal)}
+.cells{flex:1;display:flex;gap:5px;min-width:0}
+
+/* 章格 */
+.cell{
+  flex:1;min-width:0;height:32px;position:relative;cursor:pointer;
+  border:1.5px dashed var(--rule);border-radius:2px;
+  background:rgba(255,255,255,.42);
+  display:flex;align-items:center;justify-content:center;
+  transition:background .14s,border-color .14s;
+  overflow:hidden;
+}
+.cell:hover{background:rgba(255,255,255,.86);border-color:var(--ink-soft)}
+.cell .lbl{
+  font-family:var(--sans);font-size:.82rem;color:var(--ink-soft);font-weight:500;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px;max-width:100%;
+}
+.cell.done{border-style:solid;border-color:rgba(184,52,42,.34);background:rgba(184,52,42,.07)}
+.cell.done .lbl{display:none}
+.cell .stamp{
+  display:none;font-family:var(--serif);font-weight:900;font-size:1.02rem;letter-spacing:.14em;
+  color:var(--seal);border:2.5px solid var(--seal);border-radius:2px;
+  padding:0 6px;line-height:1.28;
+  transform:rotate(-7deg);
+  text-shadow:0 0 1px rgba(184,52,42,.5);
+  box-shadow:inset 0 0 3px rgba(184,52,42,.28);
+  opacity:.9;
+}
+.cell.done .stamp{display:block}
+.cell.done .stamp.fresh{animation:stampDown .34s cubic-bezier(.2,1.4,.35,1)}
+@keyframes stampDown{
+  0%{transform:scale(2.6) rotate(-22deg);opacity:0}
+  55%{transform:scale(.9) rotate(-7deg);opacity:1}
+  100%{transform:scale(1) rotate(-7deg);opacity:.9}
+}
+.cells .none{
+  font-family:var(--serif);font-size:.82rem;color:var(--ink-faint);
+  letter-spacing:.12em;font-style:italic;padding-left:4px;
+}
+
+/* 列管名單（紅色公文夾） */
+.folder-flag{
+  border:2px solid var(--seal);
+  background:linear-gradient(178deg,rgba(255,246,244,.86),rgba(255,236,233,.6));
+  box-shadow:0 2px 9px rgba(141,33,25,.24);
+}
+.folder-flag .folder-tab{background:linear-gradient(180deg,#c14538,#93241b);border-bottom-color:#6e1811;cursor:default}
+.folder-flag .folder-tab:hover{filter:none}
+.flag-list{padding:7px;display:grid;grid-template-columns:repeat(2,1fr);gap:5px;max-height:274px;overflow:auto}
+.flag-card{
+  background:#fff;border:1px solid #dfa9a2;border-radius:2px;
+  display:flex;align-items:stretch;overflow:hidden;cursor:pointer;
+  transition:box-shadow .13s,transform .13s;min-height:34px;
+}
+.flag-card:hover{transform:translateY(-1px);box-shadow:0 3px 8px rgba(141,33,25,.24)}
+.flag-card .kind{
+  flex:0 0 auto;width:5px;
+}
+.flag-card.long .kind{background:var(--seal)}
+.flag-card.day  .kind{background:var(--gold)}
+.flag-body{flex:1;min-width:0;padding:3px 7px;display:flex;flex-direction:column;justify-content:center}
+.flag-name{
+  font-family:var(--serif);font-weight:700;font-size:.94rem;color:var(--seal-deep);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.flag-sub{font-family:var(--sans);font-size:.68rem;color:#a3766f;letter-spacing:.02em}
+.flag-x{
+  flex:0 0 auto;width:26px;background:#fdeceb;border:0;border-left:1px solid #efc9c4;
+  color:#a53229;font-weight:900;cursor:pointer;font-size:.9rem;transition:background .15s,color .15s;
+}
+.flag-x:hover{background:var(--seal);color:#fff}
+.flag-add{
+  padding:7px;border-top:1px solid #e6bdb7;display:flex;gap:6px;align-items:center;
+}
+.flag-add select,.flag-add input{
+  font-family:var(--sans);font-size:.85rem;padding:5px 7px;
+  border:1px solid #dfa9a2;border-radius:2px;background:#fff;color:var(--ink);min-width:0;
+}
+.flag-add select{flex:1}
+.flag-add .seg{display:flex;border:1px solid #dfa9a2;border-radius:2px;overflow:hidden}
+.flag-add .seg button{
+  background:#fff;border:0;padding:5px 8px;cursor:pointer;
+  font-family:var(--serif);font-size:.78rem;letter-spacing:.08em;color:#a3766f;
+}
+.flag-add .seg button.on{background:var(--seal);color:#fff;font-weight:700}
+.flag-empty{grid-column:1/-1;text-align:center;color:#b99a95;font-family:var(--serif);
+  font-style:italic;letter-spacing:.14em;padding:16px 0;font-size:.94rem}
+
+/* =====================  設定  ===================== */
+.setup{flex:1;min-height:0;overflow:auto;padding-right:6px;display:flex;flex-direction:column;gap:14px}
+.fieldset{
+  border:1.5px solid var(--rule);border-radius:2px;background:rgba(255,255,255,.3);
+  padding:0 0 12px;
+}
+.fieldset > .fs-head{
+  display:flex;align-items:center;gap:10px;
+  background:rgba(107,95,82,.12);border-bottom:1.5px solid var(--rule);
+  padding:6px 13px;margin-bottom:11px;
+}
+.fs-head .fs-no{
+  font-family:var(--mono);font-size:.76rem;font-weight:700;color:#fff;
+  background:var(--ink-soft);padding:1px 6px;border-radius:2px;
+}
+.fs-head .fs-t{font-family:var(--serif);font-weight:900;font-size:1.06rem;letter-spacing:.16em;color:var(--ink)}
+.fs-head .fs-d{font-family:var(--sans);font-size:.78rem;color:var(--ink-soft)}
+.fs-body{padding:0 13px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field > label{
+  font-family:var(--serif);font-weight:700;font-size:.9rem;letter-spacing:.1em;color:var(--ink);
+  display:flex;align-items:center;gap:7px;
+}
+.field .hint{font-family:var(--sans);font-size:.74rem;color:var(--ink-soft);font-weight:400;letter-spacing:0}
+select{
+  font-family:var(--sans);font-size:.95rem;color:var(--ink);
+  background:rgba(255,255,255,.82);border:1.5px solid var(--rule);border-radius:2px;
+  padding:8px 10px;width:100%;cursor:pointer;
+}
+select:focus{outline:0;border-color:var(--gov);background:#fff}
+textarea,input[type=text]{
+  font-family:var(--sans);font-size:.95rem;color:var(--ink);
+  background:rgba(255,255,255,.82);border:1.5px solid var(--rule);border-radius:2px;
+  padding:8px 10px;width:100%;resize:vertical;line-height:1.6;
+}
+textarea:focus,input[type=text]:focus{outline:0;border-color:var(--gov);background:#fff}
+textarea{min-height:132px}
+.mono-area{font-family:var(--mono);font-size:.9rem}
+
+/* 家長代碼清單 */
+.switch{display:flex;align-items:center;gap:7px;cursor:pointer;
+  font-family:var(--serif);font-weight:700;font-size:.95rem;letter-spacing:.08em;color:var(--ink)}
+.switch input{width:17px;height:17px;accent-color:var(--seal);cursor:pointer}
+.codes{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(226px,1fr));gap:6px;
+  margin:11px 0 4px;max-height:250px;overflow:auto;
+}
+.code-card{
+  display:flex;align-items:center;gap:8px;padding:5px 9px;
+  background:rgba(255,255,255,.62);border:1px solid var(--rule);border-radius:2px;
+  font-size:.88rem;
+}
+.code-card .cs{font-family:var(--mono);font-size:.76rem;font-weight:700;color:#fff;
+  background:var(--ink-soft);border-radius:2px;padding:1px 5px;min-width:25px;text-align:center}
+.code-card .cn{font-family:var(--serif);font-weight:700;color:var(--ink);flex:1;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.code-card .cc{font-family:var(--mono);font-weight:700;color:var(--seal-deep);letter-spacing:.08em}
+.code-card .cb{background:transparent;border:1px solid var(--rule);border-radius:2px;
+  cursor:pointer;font-size:.74rem;padding:2px 6px;color:var(--ink-soft);font-family:var(--sans)}
+.code-card .cb:hover{background:var(--gov);color:#fff;border-color:var(--gov)}
+.codes-empty{grid-column:1/-1;font-family:var(--serif);font-style:italic;
+  color:var(--ink-faint);letter-spacing:.1em;padding:12px 0}
+
+/* =====================  彈窗  ===================== */
+.veil{
+  position:fixed;inset:0;background:rgba(20,14,10,.62);backdrop-filter:blur(3px);
+  display:none;align-items:center;justify-content:center;z-index:500;padding:20px;
+}
+.veil.on{display:flex;animation:fade .18s}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.dialog{
+  width:600px;max-width:100%;max-height:88vh;
+  border:1px solid var(--paper-edge);border-radius:2px;
+  box-shadow:0 22px 60px rgba(0,0,0,.62);
+  display:flex;flex-direction:column;
+  animation:dlgIn .24s cubic-bezier(.22,1.1,.34,1);
+}
+@keyframes dlgIn{from{transform:translateY(14px) scale(.98);opacity:0}to{transform:none;opacity:1}}
+.dlg-head{
+  flex:0 0 auto;padding:13px 18px 9px;border-bottom:2.5px solid var(--ink);
+  display:flex;align-items:baseline;gap:12px;
+}
+.dlg-head .t{font-family:var(--serif);font-weight:900;font-size:1.24rem;letter-spacing:.16em;color:var(--ink)}
+.dlg-head .n{font-family:var(--mono);font-size:.76rem;color:var(--ink-soft);margin-left:auto}
+.dlg-body{flex:1;min-height:0;overflow:auto;padding:15px 18px}
+.dlg-foot{
+  flex:0 0 auto;padding:11px 18px 14px;border-top:1px solid var(--rule);
+  display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap;
+}
+.dlg-note{font-family:var(--sans);font-size:.8rem;color:var(--ink-soft);margin-top:9px;line-height:1.65}
+
+/* 補件清單 */
+.docket{display:flex;flex-direction:column;gap:6px}
+.docket-item{
+  display:flex;align-items:center;gap:11px;padding:9px 12px;cursor:pointer;
+  background:rgba(255,255,255,.6);border:1.5px solid var(--rule);border-radius:2px;
+  transition:background .14s,border-color .14s;
+}
+.docket-item:hover{background:#fff;border-color:var(--ink-soft)}
+.docket-item .box{
+  flex:0 0 auto;width:23px;height:23px;border:2px solid var(--ink-soft);border-radius:2px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--serif);font-weight:900;color:var(--seal);font-size:1.06rem;
+}
+.docket-item .txt{flex:1;font-family:var(--serif);font-size:1.04rem;color:var(--ink)}
+.docket-item.ok{background:var(--seal-wash);border-color:rgba(184,52,42,.4)}
+.docket-item.ok .box{border-color:var(--seal)}
+.docket-item.ok .txt{color:var(--seal-deep);text-decoration:line-through;text-decoration-color:rgba(184,52,42,.45)}
+.docket-empty{font-family:var(--serif);font-style:italic;color:var(--ink-faint);
+  letter-spacing:.12em;text-align:center;padding:22px 0}
+
+/* =====================  結案大印（慶祝）  ===================== */
+.finale{
+  position:fixed;inset:0;z-index:900;display:none;
+  align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at center,rgba(30,20,14,.72),rgba(12,8,5,.92));
+  backdrop-filter:blur(4px);
+}
+.finale.on{display:flex}
+.finale-paper{
+  position:relative;padding:50px 190px 62px 96px;text-align:center;
+  border:1px solid var(--paper-edge);
+  box-shadow:0 30px 90px rgba(0,0,0,.8);
+  animation:paperUp .5s cubic-bezier(.2,1.05,.32,1);
+  max-width:92vw;
+}
+@keyframes paperUp{from{transform:translateY(40px) scale(.94);opacity:0}to{transform:none;opacity:1}}
+.finale-org{font-family:var(--serif);font-size:1rem;letter-spacing:.42em;color:var(--ink-soft);margin-bottom:6px}
+.finale-cap{
+  font-family:var(--serif);font-weight:900;font-size:3.8rem;letter-spacing:.26em;
+  color:var(--ink);line-height:1.18;margin-bottom:10px;text-indent:.3em;
+}
+.finale-sub{
+  font-family:var(--serif);font-size:1.28rem;letter-spacing:.2em;color:var(--ink-soft);
+  border-top:1.5px solid var(--rule);border-bottom:1.5px solid var(--rule);
+  padding:9px 0;display:inline-block;min-width:340px;
+}
+.finale-date{font-family:var(--mono);font-size:.92rem;color:var(--ink-faint);margin-top:16px;letter-spacing:.08em}
+/* 大朱印 */
+.bigseal{
+  position:absolute;right:24px;bottom:28px;
+  width:146px;height:146px;border-radius:50%;
+  border:6px solid var(--seal);color:var(--seal);
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+  font-family:var(--serif);font-weight:900;letter-spacing:.16em;
+  transform:rotate(-14deg);opacity:0;
+  box-shadow:inset 0 0 0 3px rgba(184,52,42,.5);
+}
+.bigseal .s1{font-size:1.66rem;line-height:1.16}
+.bigseal .s2{font-size:.78rem;letter-spacing:.24em;margin-top:5px;opacity:.85}
+.finale.on .bigseal{animation:bigStamp .6s .34s cubic-bezier(.2,1.5,.35,1) forwards}
+@keyframes bigStamp{
+  0%{transform:rotate(-30deg) scale(3.4);opacity:0}
+  60%{transform:rotate(-14deg) scale(.92);opacity:.96}
+  100%{transform:rotate(-14deg) scale(1);opacity:.88}
+}
+.finale-x{
+  position:absolute;top:-16px;right:-16px;width:38px;height:38px;border-radius:50%;
+  background:var(--seal);color:#fff;border:2px solid var(--paper-hi);cursor:pointer;
+  font-size:1.14rem;font-weight:900;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 3px 10px rgba(0,0,0,.4);
+}
+.finale-x:hover{filter:brightness(1.15)}
+/* 零逾期版本：加金框 */
+.finale-paper.zero{box-shadow:0 0 0 5px var(--gold),0 30px 90px rgba(0,0,0,.8)}
+.finale-paper.zero .finale-cap{color:#6b5312}
+
+/* =====================  浮動訊息  ===================== */
+#note{
+  position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(12px);
+  background:rgba(28,21,16,.94);color:#f2e6c9;
+  font-family:var(--serif);font-size:.98rem;letter-spacing:.1em;
+  padding:11px 22px;border-radius:2px;border-left:4px solid var(--gold);
+  box-shadow:0 8px 26px rgba(0,0,0,.5);z-index:950;
+  opacity:0;pointer-events:none;transition:opacity .22s,transform .22s;
+}
+#note.on{opacity:1;transform:translateX(-50%)}
+#note.seal{border-left-color:var(--seal)}
+#note.gov{border-left-color:#4a8fd0}
+
+.hide{display:none !important}
+
+/* =====================  小螢幕（老師自己補資料用）  ===================== */
+@media (max-width:1100px){
+  .block-new .item-cols,.block-fix .item-cols{column-count:2}
+  .block-new .item{font-size:1.5rem}
+  .block-fix .item{font-size:1.24rem}
+  .board{grid-template-columns:1fr}
+  .grid3,.grid2{grid-template-columns:1fr}
+}
+@media (max-width:720px){
+  body{height:auto;min-height:100vh;overflow:auto}
+  header{height:auto;flex-wrap:wrap;padding:8px 12px;gap:10px}
+  .tabs{order:3;width:100%;overflow-x:auto}
+  .masthead .sub{display:none}
+  main{padding:8px}
+  .view{padding:12px 14px}
+  .view::before{display:none}
+  .view > *{margin-left:0}
+  .block-new .item-cols,.block-fix .item-cols{column-count:1}
+  .flag-list{grid-template-columns:1fr}
+  .finale-cap{font-size:2.1rem}
+  .finale-paper{padding:30px 26px 118px}
+  .bigseal{width:96px;height:96px;right:50%;transform:translateX(50%) rotate(-12deg);bottom:12px}
+  .bigseal .s1{font-size:1.06rem}
+}
+</style>
+</head>
+<body class="">
+
+<header>
+  <div class="masthead">
+    <span class="org" id="org-name">業務進度板</span>
+    <span class="sub" id="org-sub">各組承接案件．每日進度與簽核追蹤</span>
+  </div>
+
+  <div class="datestamp" id="datestamp">
+    <button id="day-prev" title="前一個工作日">◀</button>
+    <div class="face" id="day-face" title="回到今日">
+      <div class="ymd" id="day-ymd">-------.--</div>
+      <div class="dow" id="day-dow">　</div>
+    </div>
+    <button id="day-next" title="後一個工作日">▶</button>
+  </div>
+
+  <div class="spacer"></div>
+
+  <div class="tabs" id="tabs">
+    <div class="tab on" data-view="view-month">營運月報</div>
+    <div class="tab" data-view="view-brief">今日工作單</div>
+    <div class="tab" data-view="view-board">結案進度</div>
+    <div class="tab" data-view="view-setup">設定</div>
+  </div>
+
+  <button class="btn btn-sm btn-ghost" id="mute" title="開關音效" style="color:#c5b391;border-color:#7a674f">♪</button>
+
+  <div class="linkchip link-local" id="linkchip" title="資料儲存位置">
+    <span class="dot"></span><span id="link-text">本機保存</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ 營運月報 ============ -->
+  <section class="view paper on" id="view-month">
+    <div class="sheet-head">
+      <div class="sheet-title" id="cal-title">　</div>
+      <div class="sheet-meta"><span id="cal-summary">　</span></div>
+      <div class="sheet-tools">
+        <button class="btn btn-sm" id="cal-prev">◀ 上月</button>
+        <button class="btn btn-sm btn-gov" id="cal-today">本　月</button>
+        <button class="btn btn-sm" id="cal-next">下月 ▶</button>
+      </div>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+  </section>
+
+  <!-- ============ 今日派工單 ============ -->
+  <section class="view paper" id="view-brief">
+    <div class="sheet-head">
+      <div class="sheet-title" id="cap-brief">今日工作單</div>
+      <div class="sheet-meta">
+        <span id="brief-docno">文號 ——</span>
+        <span id="brief-date">　</span>
+      </div>
+      <div class="sheet-tools">
+        <button class="btn btn-sm btn-ghost" id="brief-zoom-out" title="縮小字級">Ａ−</button>
+        <button class="btn btn-sm btn-ghost" id="brief-zoom-in" title="放大字級">Ａ＋</button>
+      </div>
+    </div>
+
+    <div class="brief">
+      <div class="brief-block block-new paper" id="block-new">
+        <span class="edit-hint">✎ 點擊編輯</span>
+        <div class="block-head">
+          <span class="cap" id="cap-new">本日新案</span>
+          <span class="num" id="note-new">（今日聯絡簿抄寫項目）</span>
+          <span class="count" id="count-new">０ 件</span>
+        </div>
+        <div class="item-cols" id="list-new"></div>
+      </div>
+
+      <div class="brief-block block-fix paper" id="block-fix">
+        <span class="edit-hint">✎ 點擊編輯</span>
+        <div class="block-head">
+          <span class="cap" id="cap-fix">本日複審案件</span>
+          <span class="num" id="note-fix">（今日須完成訂正並送核）</span>
+          <span class="count" id="count-fix">０ 件</span>
+        </div>
+        <div class="item-cols" id="list-fix"></div>
+      </div>
+
+      <div class="carryover hide" id="carryover"></div>
+    </div>
+  </section>
+
+  <!-- ============ 結案進度 ============ -->
+  <section class="view paper" id="view-board">
+    <div class="sheet-head">
+      <div class="sheet-title" id="cap-board">核可進度</div>
+      <div class="sheet-meta"><span id="board-progress">　</span></div>
+      <div class="sheet-tools">
+        <button class="btn btn-sm btn-ghost" id="board-check" title="重新檢查今日是否全數核可">核可查核</button>
+      </div>
+    </div>
+    <div class="board" id="board"></div>
+  </section>
+
+  <!-- ============ 設定 ============ -->
+  <section class="view paper" id="view-setup">
+    <div class="sheet-head">
+      <div class="sheet-title">設定</div>
+      <div class="sheet-meta"><span>建檔、名冊與資料保存</span></div>
+      <div class="sheet-tools">
+        <a class="btn btn-ghost" id="btn-guide" href="說明.html" target="_blank" rel="noopener"
+           style="text-decoration:none">使用說明</a>
+        <button class="btn btn-seal" id="setup-save">儲存設定</button>
+      </div>
+    </div>
+
+    <div class="setup">
+
+      <!-- 一、機關資料 -->
+      <div class="fieldset">
+        <div class="fs-head">
+          <span class="fs-no">壹</span>
+          <span class="fs-t">基本資料</span>
+          <span class="fs-d">顯示在畫面最上方的抬頭</span>
+        </div>
+        <div class="fs-body grid3">
+          <div class="field">
+            <label>單位名稱</label>
+            <input type="text" id="in-org" placeholder="例：光明國小　六年二班">
+          </div>
+          <div class="field">
+            <label>副標題</label>
+            <input type="text" id="in-sub" placeholder="例：各組承接案件．每日進度與簽核追蹤">
+          </div>
+          <div class="field">
+            <label>承辦人</label>
+            <input type="text" id="in-teacher" placeholder="例：林庭均">
+          </div>
+        </div>
+        <div class="fs-body" style="margin-top:12px">
+          <div class="field">
+            <label>情境用語
+              <span class="hint">整套畫面的用詞會跟著換，已建檔的資料完全不受影響</span>
+            </label>
+            <select id="in-lex">
+              <option value="corp">企業簽核版　│　接案 → 待簽核 → 核准　│　催件名單</option>
+              <option value="gov">公務機關版　│　交辦 → 陳核 → 照准　│　逾期列管．稽催</option>
+              <option value="qc">品管驗收版　│　投產 → 待檢驗 → 允收　│　品管紅單</option>
+              <option value="plain">白話直說版　│　作業 → 訂正 → 完成　│　待補作業</option>
+            </select>
+            <div class="dlg-note">
+              換一版就整套換掉，可以直接投影出來讓學生選。想自己調字，程式裡的
+              <code>LEX_SETS</code> 區塊可以逐字改。
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 二、員工名冊 -->
+      <div class="fieldset">
+        <div class="fs-head">
+          <span class="fs-no">貳</span>
+          <span class="fs-t">員工名冊</span>
+          <span class="fs-d">一行一人，格式：座號　姓名　組別</span>
+        </div>
+        <div class="fs-body grid2">
+          <div class="field">
+            <label>名冊
+              <span class="hint">用空白或逗號分隔，組別請填阿拉伯數字</span>
+            </label>
+            <textarea id="in-roster" class="mono-area" spellcheck="false" placeholder="1 王小明 1&#10;2 李小華 1&#10;3 張小美 2&#10;4 陳大文 2"></textarea>
+          </div>
+          <div class="field">
+            <label>公司（組別）命名
+              <span class="hint">選填。一行一組，格式：組號　公司名</span>
+            </label>
+            <textarea id="in-teams" class="mono-area" spellcheck="false" placeholder="1 晨星科技&#10;2 大河物流&#10;3 青田設計"></textarea>
+            <div class="dlg-note">
+              留白就顯示「第一組、第二組……」。改動名冊時，已建檔的紀錄會依姓名自動對應，不會錯位。
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 三、資料保存 -->
+      <div class="fieldset">
+        <div class="fs-head">
+          <span class="fs-no">參</span>
+          <span class="fs-t">資料保存</span>
+          <span class="fs-d">備份、還原與重新建檔</span>
+        </div>
+        <div class="fs-body">
+          <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:center">
+            <button class="btn" id="btn-export">匯出備份檔</button>
+            <button class="btn" id="btn-import">匯入備份檔</button>
+            <input type="file" id="file-import" accept=".json,application/json" class="hide">
+            <span style="flex:1"></span>
+            <button class="btn btn-ghost" id="btn-newterm">新學年重新建檔</button>
+            <button class="btn btn-ghost" id="btn-demo">載入示範資料</button>
+          </div>
+          <div class="dlg-note">
+            資料目前存在這台裝置的瀏覽器裡，關掉分頁也不會消失。<b>換電腦、換瀏覽器、或清除瀏覽資料就會不見</b>，
+            所以請養成每週匯出一次備份的習慣。<br>
+            「新學年重新建檔」會清空所有派工與結案紀錄，但會先自動下載一份備份給你。
+          </div>
+        </div>
+      </div>
+
+      <!-- 肆、共用連線 -->
+      <div class="fieldset">
+        <div class="fs-head">
+          <span class="fs-no">肆</span>
+          <span class="fs-t">共用連線</span>
+          <span class="fs-d">多台電腦共同編輯同一份紀錄（選用）</span>
+        </div>
+        <div class="fs-body">
+          <div class="field">
+            <label>連線網址
+              <span class="hint">貼上你的 Google 試算表網頁應用程式網址</span>
+            </label>
+            <input type="text" id="in-endpoint" placeholder="https://script.google.com/macros/s/.../exec">
+          </div>
+          <div class="dlg-note">
+            <b>留白＝只存在這台電腦</b>，程式一樣完整可用，不需要任何設定。<br>
+            填入網址後，這台電腦的紀錄會與雲端試算表同步，其他電腦貼上同一段網址就能一起編輯。
+            設定步驟請看隨附的「說明.html → 參、多台電腦共用同一份紀錄」。
+          </div>
+        </div>
+      </div>
+
+      <!-- 伍、家長檢視 -->
+      <div class="fieldset" id="fs-parent">
+        <div class="fs-head">
+          <span class="fs-no">伍</span>
+          <span class="fs-t">家長檢視</span>
+          <span class="fs-d">讓家長用專屬連結看孩子的電子聯絡簿（選用，預設關閉）</span>
+        </div>
+        <div class="fs-body">
+          <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
+            <label class="switch">
+              <input type="checkbox" id="in-parent-on">
+              <span>啟用家長檢視</span>
+            </label>
+            <span style="flex:1"></span>
+            <button class="btn btn-sm" id="btn-codes">產生／補發代碼</button>
+            <button class="btn btn-sm btn-ghost" id="btn-codes-copy">複製全部連結</button>
+            <button class="btn btn-sm btn-ghost" id="btn-codes-reset">全部重新產生</button>
+          </div>
+
+          <div class="dlg-note" id="parent-hint"></div>
+          <div class="codes" id="codes-list"></div>
+
+          <div class="dlg-note">
+            <b>每個孩子一組專屬代碼</b>，家長只看得到自己孩子的當日聯絡簿與進度，看不到其他同學的姓名或成績。<br>
+            需要先在「共用連線」填好網址，家長頁才有資料可讀。停用開關一按，所有連結立刻失效。<br>
+            <b>這等於把孩子的作業狀況放上網（要代碼才進得去）</b>，建議先跟學校確認，也讓家長自己決定要不要開通。
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<!-- ============ 通用彈窗 ============ -->
+<div class="veil" id="veil">
+  <div class="dialog paper" id="dialog">
+    <div class="dlg-head">
+      <span class="t" id="dlg-title">標題</span>
+      <span class="n" id="dlg-no"></span>
+    </div>
+    <div class="dlg-body" id="dlg-body"></div>
+    <div class="dlg-foot" id="dlg-foot"></div>
+  </div>
+</div>
+
+<!-- ============ 結案大印 ============ -->
+<div class="finale" id="finale">
+  <div class="finale-paper paper" id="finale-paper">
+    <div class="finale-x" id="finale-x">×</div>
+    <div class="finale-org" id="finale-org">　</div>
+    <div class="finale-cap" id="finale-cap">本日全數結案</div>
+    <div class="finale-sub" id="finale-sub">　</div>
+    <div class="finale-date" id="finale-date">　</div>
+    <div class="bigseal" id="finale-seal">
+      <div class="s1" id="seal-s1">結案</div>
+      <div class="s2" id="seal-s2">APPROVED</div>
+    </div>
+  </div>
+</div>
+
+<div id="note">訊息</div>
+
+<script>
+"use strict";
+/* =====================================================================
+   業務進度板 — 主程式
+   資料格式 fmt:2  ／  以穩定 id 記錄，名冊調動不會錯位
+   ===================================================================== */
+
+const APP = { ver: "1.2", fmt: 2, key: "progressBoard.v1" };
+
+/* 同一台電腦要放兩個班（例如辦公室共用電腦）時，
+   在網址後面加上 ?c=代號，各自存成獨立的一份 */
+(function () {
+  const m = /[?&]c=([A-Za-z0-9_-]{1,24})/.exec(location.search);
+  if (m) APP.key = "progressBoard.v1." + m[1];
+})();
+
+/* =====================================================================
+   情境語彙表 —— 想換用詞只要改這一塊，全程式的字都會跟著變
+   ===================================================================== */
+const LEX_SETS = {
+
+/* ---- 公務機關版：行政院《文書處理手冊》與公文時效管制用語 ---- */
+gov: {
+  label:    "公務機關版",
+  briefCap: "今日交辦單",
+  newCap:   "本日交辦",
+  newNote:  "（今日聯絡簿抄寫項目）",
+  fixCap:   "本日陳核案件",
+  fixNote:  "（批改發回，補正完成即可陳核）",
+  stamp:    "照准",
+  boardCap: "陳核進度",
+  checkBtn: "決行查核",
+  clearTag: "全數照准",
+  teamTag:  "全案照准",
+  openTag:  "辦理中",
+  allDay:   "本日全案照准",
+  allSeal:  "照准",
+  allSealEn:"APPROVED",
+  remain:   "尚缺",
+  doneWord: "已照准",
+  rate:     "本月照准率",
+  flagCap:  "逾期列管",
+  flagSub:  "稽　催",
+  flagLong: "列管",
+  flagDay:  "本日",
+  carryCap: "續辦事項",
+  fixWord:  "補正",
+  clearWord:"銷號",
+  praise: [
+    "全案如期辦結，殊堪嘉許。",
+    "本日案件無一積壓，允宜表揚。",
+    "各部門通力合作，如期陳核。",
+    "案件辦理迅速確實，值得肯定。",
+    "件件照准，全班辦事效率甚佳。"
+  ]
+},
+
+/* ---- 企業簽核版：一般公司電子簽核／BPM 系統的日常用語 ---- */
+corp: {
+  label:    "企業簽核版",
+  briefCap: "今日工作單",
+  newCap:   "本日接案",
+  newNote:  "（今日聯絡簿抄寫項目）",
+  fixCap:   "本日待簽核",
+  fixNote:  "（批改發回，補件完成即可送簽）",
+  stamp:    "核准",
+  boardCap: "簽核進度",
+  checkBtn: "進度查核",
+  clearTag: "全數核准",
+  teamTag:  "全組會簽通過",
+  openTag:  "簽核中",
+  allDay:   "本日全數核准",
+  allSeal:  "核准",
+  allSealEn:"APPROVED",
+  remain:   "尚缺",
+  doneWord: "已核准",
+  rate:     "本月核准率",
+  flagCap:  "催件名單",
+  flagSub:  "逾　期",
+  flagLong: "長期",
+  flagDay:  "本日",
+  carryCap: "續辦事項",
+  fixWord:  "補件",
+  clearWord:"結案",
+  praise: [
+    "全案如期完成，表現值得肯定。",
+    "本日零積壓，各部門配合良好。",
+    "件件準時送簽，效率甚佳。",
+    "全數一次通過，請繼續保持。",
+    "今日所有申請均已核准。"
+  ]
+},
+
+/* ---- 品管驗收版：製造業檢驗流程用語 ---- */
+qc: {
+  label:    "品管驗收版",
+  briefCap: "今日生產單",
+  newCap:   "本日投產",
+  newNote:  "（今日聯絡簿抄寫項目）",
+  fixCap:   "本日待檢驗",
+  fixNote:  "（批改發回，修正完成即可送驗）",
+  stamp:    "允收",
+  boardCap: "檢驗進度",
+  checkBtn: "全檢查核",
+  clearTag: "全數允收",
+  teamTag:  "產線零缺點",
+  openTag:  "檢驗中",
+  allDay:   "本日全數允收",
+  allSeal:  "允收",
+  allSealEn:"PASSED",
+  remain:   "尚缺",
+  doneWord: "已允收",
+  rate:     "本月允收率",
+  flagCap:  "品管紅單",
+  flagSub:  "追　蹤",
+  flagLong: "長期",
+  flagDay:  "本日",
+  carryCap: "待處理事項",
+  fixWord:  "修正",
+  clearWord:"結案",
+  praise: [
+    "全批允收，品質穩定。",
+    "本日零不良，產線表現優異。",
+    "各線通力合作，準時交貨。",
+    "全數一次通過檢驗，值得肯定。",
+    "品質把關確實，請繼續保持。"
+  ]
+},
+
+/* ---- 白話直說版：不套情境，給中低年級或其他老師 ---- */
+plain: {
+  label:    "白話直說版",
+  briefCap: "今日聯絡簿",
+  newCap:   "今日作業",
+  newNote:  "（聯絡簿要抄的項目）",
+  fixCap:   "今日訂正",
+  fixNote:  "（批改發回，訂正完成就可以確認）",
+  stamp:    "完成",
+  boardCap: "訂正進度",
+  checkBtn: "重新檢查",
+  clearTag: "全班完成",
+  teamTag:  "全組完成",
+  openTag:  "進行中",
+  allDay:   "今天全班都完成了",
+  allSeal:  "完成",
+  allSealEn:"DONE",
+  remain:   "還差",
+  doneWord: "已完成",
+  rate:     "本月完成率",
+  flagCap:  "待補作業",
+  flagSub:  "追　蹤",
+  flagLong: "長期",
+  flagDay:  "今天",
+  carryCap: "昨天還沒完成",
+  fixWord:  "補交",
+  clearWord:"完成",
+  praise: [
+    "今天全班都完成了，很棒！",
+    "所有人都準時做完，請繼續保持。",
+    "每一組都合作得很好。",
+    "今天沒有人落後，值得鼓勵。",
+    "全班一次過關，太厲害了。"
+  ]
+}
+
+};
+
+let LEX = LEX_SETS.corp;
+
+
+/* ---------------------------------------------------------------- 工具 */
+const $  = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+
+let _seq = 0;
+function uid(p) {
+  _seq++;
+  return p + "_" + Date.now().toString(36) + _seq.toString(36) +
+         Math.random().toString(36).slice(2, 6);
+}
+const now = () => Date.now();
+
+/* 日期：全部使用「本地時間」，不碰 toISOString，避免時區偏移 */
+function dstr(d) {
+  return d.getFullYear() + "-" +
+         String(d.getMonth() + 1).padStart(2, "0") + "-" +
+         String(d.getDate()).padStart(2, "0");
+}
+function dparse(s) {
+  const p = String(s).split("-").map(Number);
+  return new Date(p[0], p[1] - 1, p[2]);
+}
+function today() { return dstr(new Date()); }
+function shift(s, n) { const d = dparse(s); d.setDate(d.getDate() + n); return dstr(d); }
+const DOW = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
+function dowOf(s) { return dparse(s).getDay(); }
+function isWeekend(s) { const w = dowOf(s); return w === 0 || w === 6; }
+/* 前／後一個上班日（跳過週末） */
+function shiftWork(s, dir) {
+  let d = shift(s, dir), guard = 0;
+  while (isWeekend(d) && guard++ < 10) d = shift(d, dir);
+  return d;
+}
+function prevWork(s) { return shiftWork(s, -1); }
+
+function esc(t) { return String(t == null ? "" : t); }
+
+/* ---------------------------------------------------------------- 音效 */
+const Snd = {
+  ctx: null, on: true,
+  boot() {
+    if (this.ctx) { if (this.ctx.state === "suspended") this.ctx.resume(); return; }
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) this.ctx = new AC();
+  },
+  noise(dur, freq, q, gain, t0) {
+    const c = this.ctx, n = Math.floor(c.sampleRate * dur);
+    const buf = c.createBuffer(1, n, c.sampleRate), ch = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / n);
+    const src = c.createBufferSource(); src.buffer = buf;
+    const bp = c.createBiquadFilter(); bp.type = "bandpass";
+    bp.frequency.value = freq; bp.Q.value = q;
+    const g = c.createGain(); g.gain.setValueAtTime(gain, t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    src.connect(bp); bp.connect(g); g.connect(c.destination);
+    src.start(t0); src.stop(t0 + dur);
+  },
+  tone(freq, t0, dur, gain, type) {
+    const c = this.ctx, o = c.createOscillator(), g = c.createGain();
+    o.type = type || "sine"; o.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(gain, t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(t0); o.stop(t0 + dur + 0.02);
+  },
+  play(kind) {
+    if (!this.on) return;
+    this.boot();
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    if (kind === "stamp") {                    // 蓋章：木頭撞擊 + 低頻
+      this.noise(0.075, 1750, 1.1, 0.16, t);
+      this.tone(112, t, 0.10, 0.22, "sine");
+      this.tone(58,  t, 0.15, 0.15, "sine");
+    } else if (kind === "lift") {              // 撤章
+      this.noise(0.045, 2600, 2.2, 0.06, t);
+      this.tone(228, t, 0.055, 0.05, "triangle");
+    } else if (kind === "page") {              // 翻頁
+      this.noise(0.13, 3400, 0.8, 0.045, t);
+    } else if (kind === "tick") {
+      this.tone(1180, t, 0.035, 0.045, "square");
+    } else if (kind === "bell") {              // 櫃檯鈴
+      this.tone(1244, t, 1.05, 0.11, "sine");
+      this.tone(1868, t, 0.75, 0.045, "sine");
+      this.tone(2489, t, 0.42, 0.022, "sine");
+    } else if (kind === "close") {             // 結案：重擊 + 鈴
+      this.noise(0.11, 1500, 0.9, 0.24, t);
+      this.tone(96, t, 0.20, 0.30, "sine");
+      this.tone(48, t, 0.28, 0.20, "sine");
+      this.tone(1244, t + 0.30, 1.25, 0.10, "sine");
+      this.tone(1868, t + 0.30, 0.85, 0.04, "sine");
+    } else if (kind === "gold") {              // 零逾期
+      this.noise(0.11, 1500, 0.9, 0.22, t);
+      this.tone(96, t, 0.20, 0.28, "sine");
+      [[523.25, 0.34], [659.25, 0.50], [783.99, 0.66], [1046.5, 0.84]]
+        .forEach(([f, d]) => this.tone(f, t + d, 0.62, 0.085, "triangle"));
+      this.tone(1244, t + 0.84, 1.5, 0.07, "sine");
+    }
+  }
+};
+document.addEventListener("pointerdown", () => Snd.boot(), { once: true });
+
+/* ---------------------------------------------------------------- 訊息 */
+let noteTimer = null;
+function note(msg, tone) {
+  const n = $("#note");
+  n.textContent = msg;
+  n.className = "on" + (tone ? " " + tone : "");
+  clearTimeout(noteTimer);
+  noteTimer = setTimeout(() => { n.className = ""; }, 2400);
+}
+
+/* ================================================================
+   資料層
+   ================================================================ */
+function blankDB() {
+  return {
+    fmt: APP.fmt,
+    org:      { name: "業務進度板", sub: "各組承接案件．每日進度與簽核追蹤", teacher: "", ts: now() },
+    teams:    { map: {}, ts: now() },
+    students: { list: [], ts: now() },
+    days:     {},
+    flags:    {},
+    prefs:    { briefZoom: 1, muted: false, lex: "corp", parent: false },
+    endpoint: ""
+  };
+}
+let DB = blankDB();
+
+function newDay() {
+  return { notes: [], cases: [], done: {}, doneTs: {}, watch: [], hailed: 0, ts: now() };
+}
+function day(ds, create) {
+  let d = DB.days[ds];
+  if (!d) {
+    if (!create) return newDay();
+    d = DB.days[ds] = newDay();
+  }
+  if (!d.doneTs) d.doneTs = {};
+  if (!d.watch) d.watch = [];
+  return d;
+}
+function touchDay(ds) { const d = day(ds, true); d.ts = now(); return d; }
+
+const students = () => DB.students.list;
+function student(id) { return students().find(s => s.id === id); }
+function teamName(t) {
+  if (!t) return "未編組";
+  return DB.teams.map[t] || ("第" + t + "組");
+}
+/* 進行中的長期列管 */
+function activeFlags() {
+  return Object.keys(DB.flags)
+    .filter(sid => DB.flags[sid] && !DB.flags[sid].gone && student(sid))
+    .map(sid => Object.assign({ sid: sid }, DB.flags[sid]));
+}
+
+/* ------------------------------------------------------- 本機儲存 */
+/* 逐格時戳只有在多台電腦同時編輯時才用得到，
+   14 天以前的日子不可能再被同時改，直接丟掉以免資料越滾越大 */
+function pruneTs() {
+  const cut = shift(today(), -14);
+  Object.keys(DB.days).forEach(ds => {
+    if (ds < cut) {
+      const d = DB.days[ds];
+      if (d && d.doneTs && Object.keys(d.doneTs).length) d.doneTs = {};
+    }
+  });
+}
+
+function saveLocal() {
+  pruneTs();
+  try { localStorage.setItem(APP.key, JSON.stringify(DB)); }
+  catch (e) { note("儲存失敗：瀏覽器空間不足", "seal"); }
+}
+function loadLocal() {
+  let raw = null;
+  try { raw = localStorage.getItem(APP.key); } catch (e) { return false; }
+  if (!raw) return false;
+  try {
+    const p = JSON.parse(raw);
+    if (!p || typeof p !== "object") return false;
+    DB = Object.assign(blankDB(), p);
+    DB.org      = Object.assign({ ts: 0 }, DB.org);
+    DB.teams    = Object.assign({ map: {}, ts: 0 }, DB.teams);
+    DB.students = Object.assign({ list: [], ts: 0 }, DB.students);
+    DB.days     = DB.days || {};
+    DB.flags    = DB.flags || {};
+    DB.prefs    = Object.assign({ briefZoom: 1, muted: false, lex: "corp", parent: false }, DB.prefs);
+    return true;
+  } catch (e) {
+    /* 絕不自動清空資料 —— 保留原始字串供人工救援 */
+    try { localStorage.setItem(APP.key + ".broken." + Date.now(), raw); } catch (e2) {}
+    console.error("資料解析失敗，已保留損毀副本", e);
+    note("資料讀取異常，已載入空白檔並保留原始副本", "seal");
+    return false;
+  }
+}
+
+/* ------------------------------------------------------- 遠端同步 */
+const Remote = {
+  busy: false, timer: null, dirty: false, rev: 0,
+  get url() { return (DB.endpoint || "").trim(); },
+  get active() { return /^https:\/\/script\.google\.com\//.test(this.url); },
+
+  async call(payload) {
+    const res = await fetch(this.url, {
+      method: "POST",
+      /* text/plain 可避開 Apps Script 的 CORS 預檢 */
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return await res.json();
+  },
+
+  async ping() {
+    if (!this.active) return null;
+    try { return await this.call({ action: "ping" }); } catch (e) { return null; }
+  },
+
+  async pull() {
+    if (!this.active) return;
+    const r = await this.call({ action: "get" });
+    if (r && r.ok && r.data) {
+      DB = mergeDB(DB, r.data);
+      this.rev = r.rev || 0;
+      saveLocal();
+      renderAll();
+      if (view === "view-setup") fillSetup();
+    } else if (r && r.ok && !r.data) {
+      /* 雲端還是空的 —— 把這台電腦現有的紀錄當成第一版送上去 */
+      this.rev = r.rev || 0;
+      if (students().length) {
+        setLink("live", "首次上傳…");
+        await this.push();
+        return;
+      }
+    }
+    setLink("live", "雲端同步中");
+  },
+
+  schedule() {
+    if (!this.active) return;
+    this.dirty = true;
+    clearTimeout(this.timer);
+    this.timer = setTimeout(() => this.push(), 2200);
+  },
+
+  async push() {
+    if (!this.active || this.busy) return;
+    this.busy = true;
+    setLink("live", "上傳中…");
+    try {
+      const r = await this.call({ action: "put", rev: this.rev, data: DB });
+      if (r && r.ok) { this.rev = r.rev; this.dirty = false; setLink("live", "雲端同步中"); }
+      else if (r && r.conflict && r.data) {
+        DB = mergeDB(DB, r.data); saveLocal(); renderAll();
+        this.rev = r.rev; this.busy = false;
+        return this.push();                       /* 合併後重送一次 */
+      }
+    } catch (e) {
+      console.warn("同步失敗", e);
+      setLink("warn", "離線．僅存本機");
+    }
+    this.busy = false;
+  },
+
+  start() {
+    clearInterval(this.poll);
+    if (!this.active) { setLink("local", "本機保存"); return; }
+    setLink("live", "連線中…");
+    this.pull().catch(() => setLink("warn", "連線失敗"));
+    this.poll = setInterval(() => { if (!this.dirty && !this.busy) this.pull().catch(() => {}); }, 20000);
+  }
+};
+
+/* 合併規則：以最後修改時間決定，逐「日」與逐「格」比對，
+   兩台電腦編輯不同日期永遠不會互相覆蓋 */
+function mergeDB(a, b) {
+  const out = blankDB();
+  out.endpoint = a.endpoint || b.endpoint || "";
+  out.prefs = a.prefs;
+  ["org", "teams", "students"].forEach(k => {
+    out[k] = ((b[k] && b[k].ts) || 0) > ((a[k] && a[k].ts) || 0) ? b[k] : a[k];
+  });
+  const dates = new Set(Object.keys(a.days || {}).concat(Object.keys(b.days || {})));
+  dates.forEach(ds => {
+    const da = (a.days || {})[ds], db2 = (b.days || {})[ds];
+    if (!da) { out.days[ds] = db2; return; }
+    if (!db2) { out.days[ds] = da; return; }
+    const base = (db2.ts || 0) > (da.ts || 0) ? JSON.parse(JSON.stringify(db2))
+                                              : JSON.parse(JSON.stringify(da));
+    /* 結案格逐格比對，避免整日覆蓋 */
+    const keys = new Set(Object.keys(da.done || {}).concat(Object.keys(db2.done || {})));
+    base.done = {}; base.doneTs = {};
+    keys.forEach(k => {
+      const ta = (da.doneTs || {})[k] || 0, tb = (db2.doneTs || {})[k] || 0;
+      const win = tb > ta ? db2 : da;
+      if ((win.done || {})[k]) base.done[k] = 1;
+      base.doneTs[k] = Math.max(ta, tb);
+    });
+    out.days[ds] = base;
+  });
+  const sids = new Set(Object.keys(a.flags || {}).concat(Object.keys(b.flags || {})));
+  sids.forEach(sid => {
+    const fa = (a.flags || {})[sid], fb = (b.flags || {})[sid];
+    if (!fa) { out.flags[sid] = fb; return; }
+    if (!fb) { out.flags[sid] = fa; return; }
+    out.flags[sid] = (fb.ts || 0) > (fa.ts || 0) ? fb : fa;
+  });
+  return out;
+}
+
+/* ---------------------------------------------- 家長檢視代碼 */
+const CODE_ABC = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";   /* 去掉 0O1IL 等易混淆字元 */
+function genCode() {
+  let c = "";
+  for (let i = 0; i < 6; i++) c += CODE_ABC[Math.floor(Math.random() * CODE_ABC.length)];
+  return c;
+}
+function ensureCodes(all) {
+  const used = {};
+  if (!all) students().forEach(s => { if (s.code) used[s.code] = 1; });
+  let made = 0;
+  students().forEach(s => {
+    if (all || !s.code) {
+      let c, guard = 0;
+      do { c = genCode(); } while (used[c] && guard++ < 50);
+      used[c] = 1; s.code = c; made++;
+    }
+  });
+  if (made) DB.students.ts = now();
+  return made;
+}
+/* 家長連結必須自己帶著端點資訊，
+   因為 parent.html 通常是別人架的共用副本，老師沒辦法去改它裡面的設定 */
+function scriptId() {
+  const m = /\/macros\/s\/([^/]+)\/exec/.exec(DB.endpoint || "");
+  return m ? m[1] : "";
+}
+function parentLink(code) {
+  const base = location.href.split(/[?#]/)[0].replace(/[^/]*$/, "") + "parent.html";
+  const sid = scriptId();
+  if (sid) return base + "?p=" + code + "&s=" + sid;
+  /* 不是標準的 Apps Script 網址就整段帶過去 */
+  return base + "?p=" + code + "&api=" + encodeURIComponent((DB.endpoint || "").trim());
+}
+
+/* 統一存檔入口 */
+function commit(opts) {
+  saveLocal();
+  Remote.schedule();
+  if (!opts || opts.render !== false) renderAll();
+}
+
+function setLink(kind, text) {
+  const c = $("#linkchip");
+  c.className = "linkchip link-" + (kind === "live" ? "live" : kind === "warn" ? "warn" : "local");
+  $("#link-text").textContent = text;
+}
+
+/* ================================================================
+   狀態
+   ================================================================ */
+let cur = today();            /* 目前檢視的日期 */
+let calMonth = new Date();    /* 月報顯示的月份 */
+let view = "view-month";
+let freshCells = {};          /* 剛蓋章的格子，用來播放動畫 */
+
+/* ================================================================
+   結案計算
+   ================================================================ */
+function cellKey(sid, cid) { return sid + "|" + cid; }
+function isDone(d, sid, cid) { return !!d.done[cellKey(sid, cid)]; }
+
+function dayStats(ds) {
+  const d = day(ds);
+  const n = students().length, c = d.cases.length;
+  const total = n * c;
+  let done = 0;
+  if (total) {
+    students().forEach(s => d.cases.forEach(k => { if (isDone(d, s.id, k.id)) done++; }));
+  }
+  return { total, done, cases: c, notes: d.notes.length, watch: (d.watch || []).length,
+           allClear: total > 0 && done === total };
+}
+
+/* 前一個上班日尚未核可的案由，連同還沒完成的人 */
+function carryOver(ds) {
+  const p = prevWork(ds), pd = DB.days[p];
+  if (!pd || !pd.cases.length) return [];
+  const out = [];
+  pd.cases.forEach(k => {
+    const owing = students().filter(s => !pd.done[cellKey(s.id, k.id)]);
+    if (owing.length) out.push({ text: k.text, owing: owing, from: p });
+  });
+  return out;
+}
+
+/* ================================================================
+   渲染：頁首
+   ================================================================ */
+function renderHead() {
+  const o = DB.org;
+  const nm = $("#org-name");
+  nm.textContent = (o.name || "業務進度板").trim();
+  $("#org-sub").textContent = o.sub || "";
+
+  const d = dparse(cur);
+  $("#day-ymd").textContent = (d.getFullYear() - 1911) + "年" +
+      String(d.getMonth() + 1).padStart(2, "0") + "月" +
+      String(d.getDate()).padStart(2, "0") + "日";
+  $("#day-dow").textContent = DOW[d.getDay()] + (cur === today() ? "．今日" : "");
+}
+
+/* ================================================================
+   渲染：營運月報
+   ================================================================ */
+const SEASON = { 1:"歲末", 2:"新春", 3:"仲春", 4:"清和", 5:"孟夏", 6:"盛夏",
+                 7:"暑期", 8:"處暑", 9:"開學", 10:"金秋", 11:"初冬", 12:"歲暮" };
+
+function renderMonth() {
+  const grid = $("#cal-grid");
+  grid.textContent = "";
+  const y = calMonth.getFullYear(), m = calMonth.getMonth();
+  $("#cal-title").textContent = y + " 年 " + (m + 1) + " 月　" + (SEASON[m + 1] || "");
+
+  ["一","二","三","四","五","六","日"].forEach((w, i) => {
+    const c = document.createElement("div");
+    c.className = "cal-dow" + (i >= 5 ? " wk" : "");
+    c.textContent = w; grid.appendChild(c);
+  });
+
+  const first = new Date(y, m, 1), last = new Date(y, m + 1, 0);
+  let lead = first.getDay(); lead = lead === 0 ? 6 : lead - 1;
+  for (let i = 0; i < lead; i++) {
+    const v = document.createElement("div"); v.className = "cal-cell void"; grid.appendChild(v);
+  }
+
+  const td = today();
+  let mDone = 0, mTotal = 0, mClearDays = 0, mOpenDays = 0;
+
+  for (let i = 1; i <= last.getDate(); i++) {
+    const ds = y + "-" + String(m + 1).padStart(2, "0") + "-" + String(i).padStart(2, "0");
+    const wk = isWeekend(ds);
+    const cell = document.createElement("div");
+    cell.className = "cal-cell" + (wk ? " wk" : "") + (ds === td ? " today" : "");
+
+    const num = document.createElement("div");
+    num.className = "cal-num"; num.textContent = i;
+    cell.appendChild(num);
+
+    if (DB.days[ds]) {
+      const st = dayStats(ds);
+      mDone += st.done; mTotal += st.total;
+      if (st.cases) {
+        const tag = document.createElement("div");
+        tag.className = "cal-tag " + (st.allClear ? "tag-clear" : "tag-open");
+        tag.textContent = st.allClear ? LEX.clearTag : LEX.openTag;
+        cell.appendChild(tag);
+        if (st.allClear) mClearDays++; else mOpenDays++;
+        if (!st.allClear) {
+          const mi = document.createElement("div");
+          mi.className = "cal-mini";
+          const b = document.createElement("b"); b.textContent = (st.total - st.done);
+          mi.appendChild(document.createTextNode(LEX.remain + " "));
+          mi.appendChild(b); mi.appendChild(document.createTextNode(" 格"));
+          cell.appendChild(mi);
+        }
+      } else if (st.notes) {
+        const tag = document.createElement("div");
+        tag.className = "cal-tag tag-note"; tag.textContent = "僅派工";
+        cell.appendChild(tag);
+      }
+      if (st.watch) {
+        const mi = document.createElement("div");
+        mi.className = "cal-mini";
+        mi.textContent = "警示 " + st.watch + " 人";
+        cell.appendChild(mi);
+      }
+    }
+    cell.addEventListener("click", () => { Snd.play("page"); openDay(ds); });
+    grid.appendChild(cell);
+  }
+
+  const rate = mTotal ? Math.round(mDone / mTotal * 100) : 0;
+  const af = activeFlags().length;
+  const sum = $("#cal-summary");
+  sum.textContent =
+    LEX.rate + " " + rate + "％　｜　" + LEX.clearTag + " " + mClearDays + " 日　" +
+    LEX.openTag + " " + mOpenDays + " 日　｜　" + LEX.flagCap + " " + af + " 人";
+  const sk = streak();
+  if (sk >= 2) {
+    const b = document.createElement("span");
+    b.className = "streak";
+    b.textContent = "連續 " + sk + " 個上班日" + LEX.clearTag;
+    sum.appendChild(b);
+  }
+}
+
+/* 從今天往回數，連續幾個「有派工且全數結案」的上班日 */
+function streak() {
+  let n = 0, ds = today();
+  if (isWeekend(ds)) ds = prevWork(ds);
+  for (let i = 0; i < 60; i++) {
+    const rec = DB.days[ds];
+    if (!rec || !rec.cases.length) break;
+    if (!dayStats(ds).allClear) break;
+    n++; ds = prevWork(ds);
+  }
+  return n;
+}
+
+/* ================================================================
+   渲染：今日派工單
+   ================================================================ */
+function renderBrief() {
+  const d = day(cur);
+  $("#brief-date").textContent = cur + "（" + DOW[dowOf(cur)] + "）";
+  $("#brief-docno").textContent = "文號 " + cur.replace(/-/g, "") + "－" +
+      String(d.notes.length + d.cases.length).padStart(2, "0");
+
+
+  /* --- 本日新案（只放今天新發布的，不混入昨日未結） --- */
+  const ln = $("#list-new"); ln.textContent = "";
+  if (!d.notes.length) {
+    const e = document.createElement("div");
+    e.className = "empty-line"; e.textContent = "本日無新案，點擊此處填寫";
+    ln.appendChild(e);
+  } else {
+    d.notes.forEach((n, i) => {
+      const it = document.createElement("div"); it.className = "item" + (n.flag ? " flag" : "");
+      const b = document.createElement("span"); b.className = "bullet"; b.textContent = i + 1;
+      const s = document.createElement("span"); s.textContent = n.text;
+      it.appendChild(b); it.appendChild(s); ln.appendChild(it);
+    });
+  }
+  $("#count-new").textContent = d.notes.length + " 件";
+
+  /* --- 退件重辦 --- */
+  const lf = $("#list-fix"); lf.textContent = "";
+  if (!d.cases.length) {
+    const e = document.createElement("div");
+    e.className = "empty-line"; e.textContent = "本日無待辦項目";
+    lf.appendChild(e);
+  } else {
+    d.cases.forEach((k, i) => {
+      const it = document.createElement("div"); it.className = "item";
+      const b = document.createElement("span"); b.className = "bullet"; b.textContent = i + 1;
+      const s = document.createElement("span"); s.textContent = k.text;
+      it.appendChild(b); it.appendChild(s); lf.appendChild(it);
+    });
+  }
+  $("#count-fix").textContent = d.cases.length + " 件";
+  renderCarry();
+  requestAnimationFrame(fitBrief);
+}
+
+/* 續辦事項：前一個上班日還沒核可的，只用一行小字點名，不佔全班版面 */
+function renderCarry() {
+  const box = $("#carryover");
+  box.textContent = "";
+  const list = carryOver(cur);
+  if (!list.length) { box.classList.add("hide"); return; }
+  box.classList.remove("hide");
+
+  const cap = document.createElement("span");
+  cap.className = "cap"; cap.textContent = LEX.carryCap;
+  box.appendChild(cap);
+
+  list.forEach((g, i) => {
+    if (i) {
+      const sp = document.createElement("span");
+      sp.className = "sep"; sp.textContent = "｜";
+      box.appendChild(sp);
+    }
+    const w = document.createElement("span"); w.className = "grp";
+    const k = document.createElement("span"); k.className = "k"; k.textContent = g.text;
+    const who = document.createElement("span"); who.className = "who";
+    who.textContent = g.owing.length > 5
+      ? "（尚有 " + g.owing.length + " 人）"
+      : "▸ " + g.owing.slice()
+          .sort((a, b) => (a.seat || 0) - (b.seat || 0))
+          .map(s => (s.seat ? s.seat + " " : "") + s.name).join("、");
+    w.appendChild(k); w.appendChild(who);
+    box.appendChild(w);
+  });
+
+  const b = document.createElement("button");
+  b.className = "btn btn-sm";
+  b.textContent = "併入今日";
+  b.title = "把這些項目併入今日的「" + LEX.fixCap + "」繼續辦理";
+  b.addEventListener("click", e => { e.stopPropagation(); mergeCarry(list); });
+  box.appendChild(b);
+}
+
+function mergeCarry(list) {
+  const d = touchDay(cur);
+  const have = {};
+  d.cases.forEach(k => { have[k.text] = 1; });
+  let added = 0;
+  list.forEach(g => {
+    if (!have[g.text]) { d.cases.push({ id: uid("k"), text: g.text }); added++; }
+  });
+  if (!added) { note("這些項目今天已經在清單裡了"); return; }
+  d.hailed = 0;
+  Snd.play("stamp"); commit();
+  note("已併入今日清單 " + added + " 項", "seal");
+}
+
+/* 依項目數自動決定欄數，並把字放大到剛好填滿版面（投影用） */
+function fitBrief() {
+  const z = DB.prefs.briefZoom || 1;
+  [["#block-new", "#list-new"], ["#block-fix", "#list-fix"]].forEach(([bs, ls]) => {
+    const block = $(bs), list = $(ls);
+    if (!block || !list) return;
+    const n = list.querySelectorAll(".item").length;
+    list.style.columnCount = n <= 3 ? 1 : n <= 8 ? 2 : 3;
+    if (!n) { block.style.fontSize = z + "em"; return; }
+    let lo = 0.5, hi = 1.85, best = 0.5;
+    for (let i = 0; i < 13; i++) {
+      const mid = (lo + hi) / 2;
+      block.style.fontSize = (z * mid) + "em";
+      if (list.scrollHeight <= list.clientHeight + 1) { best = mid; lo = mid; }
+      else hi = mid;
+    }
+    block.style.fontSize = (z * best) + "em";
+  });
+}
+window.addEventListener("resize", () => {
+  if (view === "view-brief") fitBrief();
+  if (view === "view-board") fitBoard();
+});
+
+/* ================================================================
+   渲染：結案進度
+   ================================================================ */
+function renderBoard() {
+  const d = day(cur), box = $("#board");
+  box.textContent = "";
+
+  const st = dayStats(cur);
+  $("#board-progress").textContent = st.cases
+    ? (LEX.doneWord + " " + st.done + " ／ " + st.total + " 格　（" +
+       (st.total ? Math.round(st.done / st.total * 100) : 0) + "％）")
+    : ("本日尚未指派「" + LEX.fixCap + "」項目");
+
+  if (!students().length) {
+    const w = document.createElement("div");
+    w.style.cssText = "padding:26px;font-family:var(--serif);font-size:1.1rem;letter-spacing:.1em;color:var(--ink-soft)";
+    w.textContent = "尚未建立員工名冊，請至「設定」建檔。";
+    box.appendChild(w);
+    return;
+  }
+
+  /* 依組別分卷宗 */
+  const groups = {};
+  students().forEach(s => { const t = s.team || 0; (groups[t] = groups[t] || []).push(s); });
+  Object.keys(groups)
+    .sort((a, b) => (Number(a) || 999) - (Number(b) || 999))
+    .forEach(t => box.appendChild(folderEl(t, groups[t], d)));
+
+  box.appendChild(flagFolderEl(d));
+  requestAnimationFrame(fitBoard);
+}
+
+/* 版面還有空間時，整塊放大到剛好填滿（黑板大屏用） */
+function fitBoard() {
+  const box = $("#board");
+  if (!box) return;
+  box.style.zoom = "";
+  if (!students().length) return;
+  const fits = z => { box.style.zoom = z; return box.scrollHeight <= box.clientHeight + 1; };
+  if (!fits(1)) { box.style.zoom = ""; return; }
+  let lo = 1, hi = 1.75, best = 1;
+  for (let i = 0; i < 9; i++) {
+    const mid = (lo + hi) / 2;
+    if (fits(mid)) { best = mid; lo = mid; } else hi = mid;
+  }
+  box.style.zoom = best > 1.02 ? best : "";
+}
+
+function folderEl(t, list, d) {
+  const f = document.createElement("div");
+  f.className = "folder";
+
+  let cells = 0, done = 0;
+  list.forEach(s => d.cases.forEach(k => { cells++; if (isDone(d, s.id, k.id)) done++; }));
+  const clear = cells > 0 && done === cells;
+  if (clear) f.classList.add("clear");
+
+  const tab = document.createElement("div");
+  tab.className = "folder-tab";
+  tab.title = "點擊：整組一次切換結案狀態";
+  const nm = document.createElement("span");
+  nm.className = "fname"; nm.textContent = teamName(Number(t));
+  const cd = document.createElement("span");
+  cd.className = "fcode"; cd.textContent = "NO." + String(t).padStart(2, "0");
+  tab.appendChild(nm); tab.appendChild(cd);
+
+  const pen = document.createElement("span");
+  pen.className = "pennant"; pen.textContent = LEX.teamTag;
+  const stt = document.createElement("span");
+  stt.className = "fstat";
+  stt.textContent = d.cases.length ? (done + "/" + cells) : (list.length + " 人");
+  tab.appendChild(stt); tab.appendChild(pen);
+
+  tab.addEventListener("click", () => toggleTeam(Number(t)));
+  f.appendChild(tab);
+
+  /* 拖放換組 */
+  f.addEventListener("dragover", e => { e.preventDefault(); f.classList.add("drop"); });
+  f.addEventListener("dragleave", () => f.classList.remove("drop"));
+  f.addEventListener("drop", e => {
+    e.preventDefault(); f.classList.remove("drop");
+    moveStudent(e.dataTransfer.getData("text/plain"), Number(t));
+  });
+
+  const roster = document.createElement("div");
+  roster.className = "roster";
+  list.sort((a, b) => (a.seat || 0) - (b.seat || 0)).forEach(s => {
+    roster.appendChild(rowEl(s, d));
+  });
+  f.appendChild(roster);
+  return f;
+}
+
+function rowEl(s, d) {
+  const flagged = !!(DB.flags[s.id] && !DB.flags[s.id].gone);
+  const watched = (d.watch || []).indexOf(s.id) >= 0;
+  const r = document.createElement("div");
+  r.className = "rrow" + (flagged || watched ? " watched" : "");
+  r.draggable = true;
+  r.addEventListener("dragstart", e => {
+    e.dataTransfer.setData("text/plain", s.id); r.classList.add("dragging");
+  });
+  r.addEventListener("dragend", () => r.classList.remove("dragging"));
+
+  const seat = document.createElement("span");
+  seat.className = "seat"; seat.textContent = s.seat || "－";
+  const who = document.createElement("span");
+  who.className = "who"; who.textContent = s.name; who.title = s.name;
+  r.appendChild(seat); r.appendChild(who);
+
+  const cells = document.createElement("div");
+  cells.className = "cells";
+  if (!d.cases.length) {
+    const n = document.createElement("span");
+    n.className = "none"; n.textContent = "本日無待辦項目";
+    cells.appendChild(n);
+  } else {
+    d.cases.forEach(k => {
+      const key = cellKey(s.id, k.id);
+      const c = document.createElement("div");
+      c.className = "cell" + (d.done[key] ? " done" : "");
+      c.title = k.text;
+      const l = document.createElement("span");
+      l.className = "lbl"; l.textContent = k.text;
+      const stamp = document.createElement("span");
+      stamp.className = "stamp" + (freshCells[key] ? " fresh" : "");
+      stamp.textContent = LEX.stamp;
+      c.appendChild(l); c.appendChild(stamp);
+      c.addEventListener("click", () => toggleCell(s.id, k.id));
+      cells.appendChild(c);
+    });
+  }
+  r.appendChild(cells);
+  return r;
+}
+
+function flagFolderEl(d) {
+  const f = document.createElement("div");
+  f.className = "folder folder-flag";
+
+  const tab = document.createElement("div");
+  tab.className = "folder-tab";
+  const nm = document.createElement("span");
+  nm.className = "fname"; nm.textContent = LEX.flagCap;
+  const cd = document.createElement("span");
+  cd.className = "fcode"; cd.textContent = LEX.flagSub;
+  const stt = document.createElement("span");
+  stt.className = "fstat";
+  const longs = activeFlags(), days = (d.watch || []).filter(id => student(id));
+  stt.textContent = LEX.flagLong + " " + longs.length + "　" + LEX.flagDay + " " + days.length;
+  tab.appendChild(nm); tab.appendChild(cd); tab.appendChild(stt);
+  f.appendChild(tab);
+
+  const list = document.createElement("div");
+  list.className = "flag-list";
+  if (!longs.length && !days.length) {
+    const e = document.createElement("div");
+    e.className = "flag-empty"; e.textContent = "名單淨空，全班進度正常";
+    list.appendChild(e);
+  }
+  longs.forEach(fl => {
+    const s = student(fl.sid); if (!s) return;
+    const left = (fl.items || []).filter(i => !i.done).length;
+    list.appendChild(flagCard(s, "long",
+      left ? ("待" + LEX.fixWord + " " + left + " 項") : (LEX.fixWord + "已齊，可" + LEX.clearWord),
+      () => openDocket(fl.sid),
+      () => removeFlag(fl.sid)));
+  });
+  days.forEach(id => {
+    const s = student(id); if (!s) return;
+    list.appendChild(flagCard(s, "day", "本日提醒",
+      () => note(s.name + "：本日提醒，請特別留意進度", "gov"),
+      () => removeWatch(id)));
+  });
+  f.appendChild(list);
+
+  /* 新增列管 */
+  const add = document.createElement("div");
+  add.className = "flag-add";
+  const sel = document.createElement("select");
+  sel.id = "flag-pick";
+  const ph = document.createElement("option");
+  ph.value = ""; ph.textContent = "選擇員工…";
+  sel.appendChild(ph);
+  students().slice().sort((a, b) => (a.seat || 0) - (b.seat || 0)).forEach(s => {
+    const o = document.createElement("option");
+    o.value = s.id; o.textContent = (s.seat ? s.seat + "　" : "") + s.name;
+    sel.appendChild(o);
+  });
+  const seg = document.createElement("div");
+  seg.className = "seg";
+  const bLong = document.createElement("button");
+  bLong.textContent = LEX.flagLong; bLong.className = "on"; bLong.dataset.kind = "long";
+  bLong.title = "跨日持續追蹤，直到" + LEX.fixWord + "齊全才" + LEX.clearWord;
+  const bDay = document.createElement("button");
+  bDay.textContent = LEX.flagDay; bDay.dataset.kind = "day";
+  bDay.title = "只在今天提醒，隔日自動消失";
+  [bLong, bDay].forEach(b => b.addEventListener("click", () => {
+    seg.querySelectorAll("button").forEach(x => x.classList.remove("on"));
+    b.classList.add("on");
+  }));
+  seg.appendChild(bLong); seg.appendChild(bDay);
+  const go = document.createElement("button");
+  go.className = "btn btn-sm btn-seal"; go.textContent = "加入";
+  go.addEventListener("click", () => {
+    const id = sel.value;
+    if (!id) { note("請先選擇員工"); return; }
+    const kind = seg.querySelector("button.on").dataset.kind;
+    addFlag(id, kind);
+  });
+  add.appendChild(sel); add.appendChild(seg); add.appendChild(go);
+  f.appendChild(add);
+  return f;
+}
+
+function flagCard(s, kind, sub, onOpen, onRemove) {
+  const c = document.createElement("div");
+  c.className = "flag-card " + kind;
+  const k = document.createElement("div"); k.className = "kind";
+  const b = document.createElement("div"); b.className = "flag-body";
+  const n = document.createElement("div");
+  n.className = "flag-name"; n.textContent = (s.seat ? s.seat + "　" : "") + s.name;
+  const u = document.createElement("div"); u.className = "flag-sub"; u.textContent = sub;
+  b.appendChild(n); b.appendChild(u);
+  const x = document.createElement("button");
+  x.className = "flag-x"; x.textContent = "×"; x.title = LEX.clearWord + "（移出名單）";
+  x.addEventListener("click", e => { e.stopPropagation(); onRemove(); });
+  c.appendChild(k); c.appendChild(b); c.appendChild(x);
+  c.addEventListener("click", onOpen);
+  return c;
+}
+
+/* ================================================================
+   互動：結案
+   ================================================================ */
+function toggleCell(sid, cid) {
+  const d = touchDay(cur), key = cellKey(sid, cid);
+  const on = !d.done[key];
+  if (on) { d.done[key] = 1; freshCells[key] = 1; Snd.play("stamp"); }
+  else { delete d.done[key]; delete freshCells[key]; Snd.play("lift"); }
+  d.doneTs[key] = now();
+  saveLocal(); Remote.schedule();
+  renderBoard(); renderMonth();
+  setTimeout(() => { freshCells = {}; }, 500);
+  checkClosure();
+}
+
+function toggleTeam(t) {
+  const d = touchDay(cur);
+  if (!d.cases.length) { note("本日尚未指派「" + LEX.fixCap + "」項目"); return; }
+  const list = students().filter(s => (s.team || 0) === t);
+  if (!list.length) return;
+  let anyOpen = false;
+  list.forEach(s => d.cases.forEach(k => { if (!isDone(d, s.id, k.id)) anyOpen = true; }));
+  list.forEach(s => d.cases.forEach(k => {
+    const key = cellKey(s.id, k.id);
+    if (anyOpen) { if (!d.done[key]) freshCells[key] = 1; d.done[key] = 1; }
+    else delete d.done[key];
+    d.doneTs[key] = now();
+  }));
+  Snd.play(anyOpen ? "stamp" : "lift");
+  saveLocal(); Remote.schedule();
+  renderBoard(); renderMonth();
+  setTimeout(() => { freshCells = {}; }, 600);
+  checkClosure();
+  note(teamName(t) + (anyOpen ? " 全數蓋章" + LEX.stamp : " 已撤銷" + LEX.stamp), anyOpen ? "seal" : "");
+}
+
+function moveStudent(sid, t) {
+  const s = student(sid);
+  if (!s || (s.team || 0) === t) return;
+  s.team = t; DB.students.ts = now();
+  Snd.play("tick");
+  commit();
+  note(s.name + " 已調任 " + teamName(t), "gov");
+}
+
+/* ================================================================
+   互動：列管
+   ================================================================ */
+function addFlag(sid, kind) {
+  const s = student(sid); if (!s) return;
+  if (kind === "day") {
+    const d = touchDay(cur);
+    if ((d.watch || []).indexOf(sid) >= 0) { note(s.name + " 已在本日提醒名單中"); return; }
+    d.watch.push(sid);
+    Snd.play("tick"); commit();
+    note(s.name + " 已加入本日提醒", "seal");
+  } else {
+    if (DB.flags[sid] && !DB.flags[sid].gone) { note(s.name + " 已在" + LEX.flagCap + "名單中"); return; }
+    DB.flags[sid] = { since: cur, items: [], ts: now(), gone: false };
+    Snd.play("tick"); commit();
+    note(s.name + " 已列入" + LEX.flagCap + "，請設定" + LEX.fixWord + "清單", "seal");
+    openDocket(sid);
+  }
+}
+function removeWatch(sid) {
+  const d = touchDay(cur);
+  d.watch = (d.watch || []).filter(x => x !== sid);
+  Snd.play("lift"); commit();
+}
+function removeFlag(sid) {
+  const s = student(sid);
+  if (DB.flags[sid]) { DB.flags[sid].gone = true; DB.flags[sid].ts = now(); }
+  const remaining = activeFlags().length;
+  commit();
+  Snd.play("lift");
+  note((s ? s.name : "該員") + " " + LEX.fixWord + "完成，已" + LEX.clearWord, "gov");
+  if (remaining === 0) celebrateZero();
+}
+
+function openDocket(sid) {
+  const s = student(sid), f = DB.flags[sid];
+  if (!s || !f) return;
+  f.items = f.items || [];
+
+  const body = document.createElement("div");
+  const wrap = document.createElement("div");
+  wrap.className = "docket";
+  if (!f.items.length) {
+    const e = document.createElement("div");
+    e.className = "docket-empty";
+    e.textContent = "尚未建立" + LEX.fixWord + "清單，請點下方「編輯" + LEX.fixWord + "清單」";
+    wrap.appendChild(e);
+  } else {
+    f.items.forEach((it, i) => {
+      const row = document.createElement("div");
+      row.className = "docket-item" + (it.done ? " ok" : "");
+      const b = document.createElement("div");
+      b.className = "box"; b.textContent = it.done ? "✓" : "";
+      const t = document.createElement("div");
+      t.className = "txt"; t.textContent = it.text;
+      row.appendChild(b); row.appendChild(t);
+      row.addEventListener("click", () => {
+        it.done = !it.done; f.ts = now();
+        Snd.play(it.done ? "stamp" : "lift");
+        saveLocal(); Remote.schedule();
+        openDocket(sid); renderBoard();
+      });
+      wrap.appendChild(row);
+    });
+  }
+  body.appendChild(wrap);
+
+  const left = f.items.filter(i => !i.done).length;
+  const info = document.createElement("div");
+  info.className = "dlg-note";
+  info.textContent = "自 " + f.since + " 起追蹤　｜　" + LEX.fixWord + "進度 " +
+      (f.items.length - left) + " ／ " + f.items.length;
+  body.appendChild(info);
+
+  const foot = [];
+  foot.push(["編輯" + LEX.fixWord + "清單", "btn", () => editDocket(sid)]);
+  if (f.items.length && left === 0)
+    foot.push(["✓ " + LEX.fixWord + "齊全，予以" + LEX.clearWord, "btn btn-seal", () => { closeDialog(); removeFlag(sid); }]);
+  foot.push(["關閉", "btn btn-ghost", closeDialog]);
+
+  showDialog(LEX.flagCap + "：" + s.name, "座號 " + (s.seat || "－"), body, foot);
+}
+
+function editDocket(sid) {
+  const s = student(sid), f = DB.flags[sid];
+  const body = document.createElement("div");
+  const ta = document.createElement("textarea");
+  ta.id = "docket-edit"; ta.spellcheck = false;
+  ta.placeholder = "一行一項未繳的項目\n例：\n數學習作 P.28\n國語聽寫訂正";
+  ta.value = (f.items || []).map(i => i.text).join("\n");
+  body.appendChild(ta);
+  const n = document.createElement("div");
+  n.className = "dlg-note";
+  n.textContent = "已經打勾的項目在重新編輯後會保留勾選狀態（依文字比對）。";
+  body.appendChild(n);
+  showDialog("編輯" + LEX.fixWord + "清單：" + s.name, "", body, [
+    ["儲存", "btn btn-seal", () => {
+      const old = {};
+      (f.items || []).forEach(i => { if (i.done) old[i.text] = 1; });
+      f.items = ta.value.split("\n").map(x => x.trim()).filter(Boolean)
+                  .map(t => ({ id: uid("i"), text: t, done: !!old[t] }));
+      f.ts = now();
+      saveLocal(); Remote.schedule();
+      openDocket(sid); renderBoard();
+    }],
+    ["返回", "btn btn-ghost", () => openDocket(sid)]
+  ]);
+  setTimeout(() => ta.focus(), 60);
+}
+
+/* ================================================================
+   互動：派工單編輯
+   ================================================================ */
+function editBlock(kind) {
+  const d = day(cur, true);
+  const isNew = kind === "new";
+  const body = document.createElement("div");
+  const ta = document.createElement("textarea");
+  ta.spellcheck = false; ta.style.minHeight = "220px";
+  ta.value = isNew
+    ? d.notes.map(n => (n.flag ? "*" : "") + n.text).join("\n")
+    : d.cases.map(k => k.text).join("\n");
+  ta.placeholder = isNew
+    ? "一行一項，學生要抄進聯絡簿的內容\n例：\n國語 L5 生字二行\n數習 P.30～31\n*明天帶美勞用具"
+    : "一行一項，今天批改發回、要完成訂正送核的作業\n例：\n數學習作 P.28\n國語聽寫";
+  body.appendChild(ta);
+  const n = document.createElement("div");
+  n.className = "dlg-note";
+  n.innerHTML = isNew
+    ? "行首加上 <b>*</b> 會標成紅色提醒項目。<br>前一個上班日還沒完成的項目不會混進這裡，會另外列在下方的「" + LEX.carryCap + "」條上。"
+    : "每新增一項，名冊上每位員工就會多一個章格，預設都是待辦，完成後蓋章。<br>修改文字不會影響已蓋章的紀錄；刪除該項才會一併移除。";
+  body.appendChild(n);
+
+  showDialog("編輯" + (isNew ? LEX.newCap : LEX.fixCap),
+    cur + "（" + DOW[dowOf(cur)] + "）", body, [
+    ["儲存", "btn btn-seal", () => {
+      const lines = ta.value.split("\n").map(x => x.trim()).filter(Boolean);
+      if (isNew) {
+        d.notes = lines.map(l => l.startsWith("*")
+          ? { id: uid("n"), text: l.slice(1).trim(), flag: true }
+          : { id: uid("n"), text: l, flag: false });
+      } else {
+        /* 依文字比對保留既有案件 id，已蓋的章不會消失 */
+        const byText = {};
+        d.cases.forEach(k => { if (!byText[k.text]) byText[k.text] = k.id; });
+        const used = {};
+        d.cases = lines.map(t => {
+          const id = (byText[t] && !used[t]) ? byText[t] : uid("k");
+          used[t] = 1;
+          return { id: id, text: t };
+        });
+      }
+      d.ts = now();
+      if (!isNew) d.hailed = 0;
+      Snd.play("tick");
+      closeDialog(); commit();
+      note("已更新", "gov");
+      checkClosure();
+    }],
+    ["取消", "btn btn-ghost", closeDialog]
+  ]);
+  setTimeout(() => ta.focus(), 60);
+}
+
+/* ================================================================
+   慶祝
+   ================================================================ */
+
+
+function checkClosure() {
+  const st = dayStats(cur);
+  if (!st.allClear) return;
+  const d = day(cur, true);
+  if (d.hailed) return;
+  d.hailed = 1; d.ts = now(); saveLocal(); Remote.schedule();
+  finale({
+    gold: false,
+    cap: LEX.allDay,
+    sub: LEX.praise[Math.floor(Math.random() * LEX.praise.length)],
+    s1: LEX.allSeal, s2: LEX.allSealEn,
+    snd: "close"
+  });
+}
+
+function celebrateZero() {
+  finale({
+    gold: true,
+    cap: "全　　清",
+    sub: LEX.flagCap + "已全數" + LEX.clearWord + "，本班無人落後。",
+    s1: "零逾期", s2: "ALL CLEAR",
+    snd: "gold"
+  });
+}
+
+function finale(o) {
+  const p = $("#finale-paper");
+  p.className = "finale-paper paper" + (o.gold ? " zero" : "");
+  $("#finale-org").textContent = DB.org.name || "業務進度板";
+  $("#finale-cap").textContent = o.cap;
+  $("#finale-sub").textContent = o.sub;
+  $("#finale-date").textContent = "中華民國 " + (dparse(cur).getFullYear() - 1911) + " 年 " +
+      (dparse(cur).getMonth() + 1) + " 月 " + dparse(cur).getDate() + " 日　承辦：" +
+      (DB.org.teacher || "－");
+  $("#seal-s1").textContent = o.s1;
+  $("#seal-s2").textContent = o.s2;
+  const seal = $("#finale-seal");
+  seal.style.borderColor = o.gold ? "var(--gold)" : "var(--seal)";
+  seal.style.color = o.gold ? "var(--gold)" : "var(--seal)";
+  $("#finale").classList.add("on");
+  Snd.play(o.snd);
+}
+function closeFinale() { $("#finale").classList.remove("on"); }
+
+/* ================================================================
+   彈窗
+   ================================================================ */
+function showDialog(title, no, bodyEl, buttons) {
+  $("#dlg-title").textContent = title;
+  $("#dlg-no").textContent = no || "";
+  const b = $("#dlg-body"); b.textContent = ""; b.appendChild(bodyEl);
+  const f = $("#dlg-foot"); f.textContent = "";
+  (buttons || []).forEach(([label, cls, fn]) => {
+    const btn = document.createElement("button");
+    btn.className = cls; btn.textContent = label;
+    btn.addEventListener("click", fn);
+    f.appendChild(btn);
+  });
+  $("#veil").classList.add("on");
+}
+function closeDialog() { $("#veil").classList.remove("on"); }
+
+/* ================================================================
+   導覽
+   ================================================================ */
+function openDay(ds) {
+  cur = ds;
+  day(cur, true);
+  try { localStorage.setItem(APP.key + ".last", cur); } catch (e) {}
+  renderHead();
+  switchView("view-brief");
+}
+function switchView(id) {
+  view = id;
+  $$(".view").forEach(v => v.classList.toggle("on", v.id === id));
+  $$(".tab").forEach(t => t.classList.toggle("on", t.dataset.view === id));
+  try { localStorage.setItem(APP.key + ".view", id); } catch (e) {}
+  if (id === "view-month") renderMonth();
+  if (id === "view-brief") renderBrief();
+  if (id === "view-board") { renderBoard(); }
+  if (id === "view-setup") fillSetup();
+}
+function renderAll() {
+  renderHead();
+  renderMonth();
+  if (view === "view-brief") renderBrief();
+  if (view === "view-board") renderBoard();
+}
+
+/* ================================================================
+   設定
+   ================================================================ */
+function fillSetup() {
+  $("#in-org").value = DB.org.name || "";
+  $("#in-sub").value = DB.org.sub || "";
+  $("#in-teacher").value = DB.org.teacher || "";
+  $("#in-endpoint").value = DB.endpoint || "";
+  $("#in-lex").value = DB.prefs.lex || "corp";
+  $("#in-parent-on").checked = !!DB.prefs.parent;
+  renderCodes();
+  $("#in-roster").value = students().slice()
+    .sort((a, b) => (a.seat || 0) - (b.seat || 0))
+    .map(s => [s.seat || "", s.name, s.team || ""].join(" ").trim())
+    .join("\n");
+  $("#in-teams").value = Object.keys(DB.teams.map)
+    .sort((a, b) => Number(a) - Number(b))
+    .map(k => k + " " + DB.teams.map[k]).join("\n");
+}
+
+function parseRoster(text) {
+  const out = [];
+  let auto = 0;
+  text.split("\n").forEach(line => {
+    const raw = line.trim();
+    if (!raw) return;
+    const tok = raw.split(/[\s,，、\t]+/).filter(Boolean);
+    let seat = null, team = 0, name = "";
+    if (tok.length === 1) { name = tok[0]; }
+    else {
+      let a = tok.slice();
+      if (/^\d+$/.test(a[0])) seat = Number(a.shift());
+      if (a.length > 1 && /^\d+$/.test(a[a.length - 1])) team = Number(a.pop());
+      name = a.join("");
+    }
+    if (!name) return;
+    if (seat == null) seat = ++auto; else auto = Math.max(auto, seat);
+    out.push({ seat: seat, name: name, team: team });
+  });
+  return out;
+}
+
+function saveSetup() {
+  DB.org.name = $("#in-org").value.trim() || "業務進度板";
+  DB.org.sub = $("#in-sub").value.trim();
+  DB.org.teacher = $("#in-teacher").value.trim();
+  DB.org.ts = now();
+  useLex($("#in-lex").value);
+  applyLex();
+
+  const map = {};
+  $("#in-teams").value.split("\n").forEach(l => {
+    const t = l.trim(); if (!t) return;
+    const m = t.match(/^(\d+)[\s,，、\t]+(.+)$/);
+    if (m) map[m[1]] = m[2].trim();
+  });
+  DB.teams = { map: map, ts: now() };
+
+  /* 名冊：以姓名對應既有 id，維持歷史紀錄不錯位 */
+  const parsed = parseRoster($("#in-roster").value);
+  const byName = {};
+  students().forEach(s => { (byName[s.name] = byName[s.name] || []).push(s); });
+  const list = parsed.map(p => {
+    const pool = byName[p.name];
+    const old = pool && pool.length ? pool.shift() : null;
+    return { id: old ? old.id : uid("s"), seat: p.seat, name: p.name,
+             team: p.team, code: old ? (old.code || "") : "" };
+  });
+  const removed = students().length - list.length;
+  DB.students = { list: list, ts: now() };
+
+  DB.prefs.parent = $("#in-parent-on").checked;
+
+  const ep = $("#in-endpoint").value.trim();
+  const changed = ep !== (DB.endpoint || "");
+  DB.endpoint = ep;
+
+  Snd.play("stamp");
+  commit();
+  note("設定已儲存　" + list.length + " 人" + (removed > 0 ? "（移除 " + removed + " 人）" : ""), "seal");
+  if (changed) Remote.start();
+  switchView("view-board");
+}
+
+/* ---------------------------------------------------- 家長代碼面板 */
+function renderCodes() {
+  const box = $("#codes-list"), hint = $("#parent-hint");
+  box.textContent = "";
+  const on = !!DB.prefs.parent;
+  const withCode = students().filter(s => s.code);
+
+  if (!students().length) {
+    hint.textContent = "請先在上面建立員工名冊，才能產生家長代碼。";
+  } else if (!on) {
+    hint.textContent = "家長檢視目前關閉中。就算代碼已經產生，家長頁也會顯示「尚未開放」。";
+  } else if (!Remote.active) {
+    hint.textContent = "已啟用，但「共用連線」還沒設定——家長頁讀不到資料。請先完成肆的設定。";
+  } else {
+    hint.textContent = "已啟用，共 " + withCode.length +
+      " 人有代碼。連結會自動帶上你的後端位址，家長不必安裝任何東西。";
+  }
+
+  if (!withCode.length) {
+    const e = document.createElement("div");
+    e.className = "codes-empty";
+    e.textContent = "尚未產生代碼，按上面的「產生／補發代碼」。";
+    box.appendChild(e);
+    return;
+  }
+
+  withCode.slice().sort((a, b) => (a.seat || 0) - (b.seat || 0)).forEach(s => {
+    const c = document.createElement("div");
+    c.className = "code-card";
+    const seat = document.createElement("span");
+    seat.className = "cs"; seat.textContent = s.seat || "－";
+    const nm = document.createElement("span");
+    nm.className = "cn"; nm.textContent = s.name;
+    const cd = document.createElement("span");
+    cd.className = "cc"; cd.textContent = s.code;
+    const btn = document.createElement("button");
+    btn.className = "cb"; btn.textContent = "複製連結";
+    btn.title = parentLink(s.code);
+    btn.addEventListener("click", () => copyText(parentLink(s.code), s.name + " 的連結已複製"));
+    c.appendChild(seat); c.appendChild(nm); c.appendChild(cd); c.appendChild(btn);
+    box.appendChild(c);
+  });
+}
+
+function copyText(txt, msg) {
+  const done = () => note(msg || "已複製", "gov");
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(done).catch(() => fallbackCopy(txt, done));
+  } else fallbackCopy(txt, done);
+}
+function fallbackCopy(txt, done) {
+  const ta = document.createElement("textarea");
+  ta.value = txt; ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand("copy"); done(); }
+  catch (e) { note("複製失敗，請手動選取", "seal"); }
+  ta.remove();
+}
+
+/* 家長連結會帶著後端位址，後端若沒設密碼，等於誰都能讀走全班資料 */
+async function warnIfOpen() {
+  const r = await Remote.ping();
+  if (!r || !r.ok || r.locked) return;
+  const body = document.createElement("div");
+  body.className = "dlg-note"; body.style.fontSize = "1rem";
+  body.innerHTML =
+    "家長連結裡會帶著你的後端位址。你的後端<b>目前沒有設連線密碼</b>，" +
+    "也就是說拿到家長連結的人，只要懂一點技術就能反過來讀取全班的資料。<br><br>" +
+    "建議先到 <code>Code.gs</code> 最上面把 <code>ACCESS_KEY</code> 填上一段自訂密碼、" +
+    "重新部署，再把「共用連線」的網址改成 <code>…/exec?k=你的密碼</code>。<br>" +
+    "家長端不受影響，他們走的是自己的六碼代碼。<br><br>" +
+    "詳細步驟在說明頁的「參、加一道密碼」。";
+  showDialog("建議先幫後端上鎖", "家長檢視", body, [
+    ["我知道了", "btn btn-seal", closeDialog]
+  ]);
+}
+
+/* ---------------------------------------------------- 備份與還原 */
+function exportData(silent) {
+  const blob = new Blob([JSON.stringify(DB, null, 1)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "業務進度板備份_" + today() + ".json";
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 400);
+  if (!silent) note("備份檔已下載", "gov");
+}
+
+function importData(file) {
+  const r = new FileReader();
+  r.onload = e => {
+    let p;
+    try { p = JSON.parse(e.target.result); }
+    catch (err) { note("檔案格式錯誤，無法讀取", "seal"); return; }
+    if (!p || !p.students || !p.days) { note("這不是本程式的備份檔", "seal"); return; }
+    const body = document.createElement("div");
+    body.className = "dlg-note";
+    body.style.fontSize = "1rem";
+    body.textContent = "匯入後，目前這台電腦上的資料會被備份檔覆蓋。備份檔含 " +
+      ((p.students.list || []).length) + " 位員工、" +
+      Object.keys(p.days || {}).length + " 個工作日的紀錄。確定要匯入嗎？";
+    showDialog("確認匯入", "", body, [
+      ["確定匯入", "btn btn-seal", () => {
+        DB = Object.assign(blankDB(), p);
+        DB.prefs = Object.assign({ briefZoom: 1, muted: false, lex: "corp", parent: false }, DB.prefs);
+        closeDialog(); commit();
+        cur = today(); renderHead(); switchView("view-month");
+        note("匯入完成", "gov");
+      }],
+      ["取消", "btn btn-ghost", closeDialog]
+    ]);
+  };
+  r.readAsText(file);
+}
+
+function newTerm() {
+  const body = document.createElement("div");
+  body.className = "dlg-note"; body.style.fontSize = "1rem";
+  body.textContent = "這會清空所有派工紀錄、結案狀態與列管名單，只保留單位名稱設定。" +
+    "執行前會自動下載一份備份檔。確定要重新建檔嗎？";
+  showDialog("新學年重新建檔", "", body, [
+    ["先備份，然後清空", "btn btn-seal", () => {
+      exportData(true);
+      const org = DB.org, ep = DB.endpoint;
+      setTimeout(() => {
+        DB = blankDB(); DB.org = org; DB.org.ts = now(); DB.endpoint = ep;
+        closeDialog(); commit();
+        cur = today(); renderHead(); switchView("view-setup"); fillSetup();
+        note("已重新建檔，請重新建立員工名冊", "seal");
+      }, 500);
+    }],
+    ["取消", "btn btn-ghost", closeDialog]
+  ]);
+}
+
+function loadDemo() {
+  const names = ["王小明","李小華","張小美","陳大文","林小宏","黃小芬","吳志明","蔡佳穎",
+                 "許志偉","鄭雅琪","劉俊傑","周宜蓁","楊承翰","賴思妤","洪建良","邱郁婷",
+                 "曾柏勳","杜若涵","馮子軒","石心怡","阮啟安","蘇語彤","唐立群","葉宛庭"];
+  DB.students = { list: names.map((n, i) => ({
+    id: uid("s"), seat: i + 1, name: n, team: Math.floor(i / 4) + 1, code: ""
+  })), ts: now() };
+  DB.teams = { map: { 1:"晨星科技", 2:"大河物流", 3:"青田設計",
+                      4:"北斗食品", 5:"長風運輸", 6:"明日出版" }, ts: now() };
+  const d = touchDay(cur);
+  d.notes = [
+    { id: uid("n"), text: "國語 L5 生字每字二行", flag: false },
+    { id: uid("n"), text: "數習 P.30～31", flag: false },
+    { id: uid("n"), text: "閱讀紀錄單一張", flag: false },
+    { id: uid("n"), text: "明天帶美勞用具", flag: true }
+  ];
+  d.cases = [
+    { id: uid("k"), text: "數習 P.28" },
+    { id: uid("k"), text: "國語聽寫" }
+  ];
+  students().slice(0, 15).forEach(s => d.cases.forEach(k => {
+    d.done[cellKey(s.id, k.id)] = 1; d.doneTs[cellKey(s.id, k.id)] = now();
+  }));
+  const a = students()[19], b = students()[21];
+  if (a) DB.flags[a.id] = { since: shift(cur, -6), ts: now(), gone: false,
+    items: [{ id: uid("i"), text: "數習 P.22", done: true },
+            { id: uid("i"), text: "作文一篇", done: false }] };
+  if (b) d.watch.push(b.id);
+  commit();
+  note("示範資料已載入，可自由試用", "gov");
+  switchView("view-board");
+}
+
+/* ================================================================
+   事件綁定
+   ================================================================ */
+function bind() {
+  $$(".tab").forEach(t => t.addEventListener("click", () => {
+    Snd.play("page"); switchView(t.dataset.view);
+  }));
+
+  $("#day-prev").addEventListener("click", () => { Snd.play("page"); cur = prevWork(cur); day(cur, true); renderHead(); renderAll(); });
+  $("#day-next").addEventListener("click", () => { Snd.play("page"); cur = shiftWork(cur, 1); day(cur, true); renderHead(); renderAll(); });
+  $("#day-face").addEventListener("click", () => {
+    Snd.play("page"); cur = today(); day(cur, true); calMonth = new Date();
+    renderHead(); renderAll(); note("已回到今日", "gov");
+  });
+
+  $("#cal-prev").addEventListener("click", () => { Snd.play("page"); calMonth.setMonth(calMonth.getMonth() - 1); renderMonth(); });
+  $("#cal-next").addEventListener("click", () => { Snd.play("page"); calMonth.setMonth(calMonth.getMonth() + 1); renderMonth(); });
+  $("#cal-today").addEventListener("click", () => { Snd.play("page"); calMonth = new Date(); renderMonth(); });
+
+  $("#block-new").addEventListener("click", () => editBlock("new"));
+  $("#block-fix").addEventListener("click", () => editBlock("fix"));
+  $("#brief-zoom-in").addEventListener("click", e => {
+    e.stopPropagation();
+    DB.prefs.briefZoom = Math.min(1.5, (DB.prefs.briefZoom || 1) + 0.08);
+    saveLocal(); renderBrief();
+  });
+  $("#brief-zoom-out").addEventListener("click", e => {
+    e.stopPropagation();
+    DB.prefs.briefZoom = Math.max(0.6, (DB.prefs.briefZoom || 1) - 0.08);
+    saveLocal(); renderBrief();
+  });
+
+  $("#board-check").addEventListener("click", () => {
+    const d = day(cur, true); d.hailed = 0;
+    const st = dayStats(cur);
+    if (st.allClear) checkClosure();
+    else if (!st.cases) note("本日尚未指派「" + LEX.fixCap + "」項目");
+    else note("尚有 " + (st.total - st.done) + " 格未" + LEX.stamp, "seal");
+  });
+
+  $("#setup-save").addEventListener("click", saveSetup);
+  $("#btn-export").addEventListener("click", () => exportData());
+  $("#btn-import").addEventListener("click", () => $("#file-import").click());
+  $("#file-import").addEventListener("change", e => {
+    if (e.target.files[0]) importData(e.target.files[0]);
+    e.target.value = "";
+  });
+  $("#in-parent-on").addEventListener("change", () => {
+    DB.prefs.parent = $("#in-parent-on").checked;
+    if (DB.prefs.parent) ensureCodes(false);
+    commit({ render: false });
+    renderCodes();
+    note(DB.prefs.parent ? "家長檢視已啟用" : "家長檢視已關閉，所有連結立即失效",
+         DB.prefs.parent ? "gov" : "seal");
+    if (DB.prefs.parent) warnIfOpen();
+  });
+
+  $("#btn-codes").addEventListener("click", () => {
+    if (!students().length) { note("請先建立員工名冊"); return; }
+    const made = ensureCodes(false);
+    commit({ render: false }); renderCodes();
+    note(made ? ("已補發 " + made + " 組代碼") : "每個人都已經有代碼了", "gov");
+  });
+
+  $("#btn-codes-copy").addEventListener("click", () => {
+    const rows = students().filter(s => s.code)
+      .sort((a, b) => (a.seat || 0) - (b.seat || 0))
+      .map(s => (s.seat ? s.seat + "\t" : "") + s.name + "\t" + parentLink(s.code));
+    if (!rows.length) { note("還沒有代碼可複製"); return; }
+    copyText(rows.join("\n"), "已複製 " + rows.length + " 筆，可直接貼進試算表");
+  });
+
+  $("#btn-codes-reset").addEventListener("click", () => {
+    if (!students().length) { note("請先建立員工名冊"); return; }
+    const body = document.createElement("div");
+    body.className = "dlg-note"; body.style.fontSize = "1rem";
+    body.textContent = "全部重新產生後，已經發出去的舊連結會立刻失效，需要重新發給每一位家長。確定嗎？";
+    showDialog("重新產生所有代碼", "", body, [
+      ["確定重新產生", "btn btn-seal", () => {
+        const n = ensureCodes(true);
+        closeDialog(); commit({ render: false }); renderCodes();
+        note("已重新產生 " + n + " 組代碼", "seal");
+      }],
+      ["取消", "btn btn-ghost", closeDialog]
+    ]);
+  });
+
+  $("#btn-newterm").addEventListener("click", newTerm);
+  $("#btn-demo").addEventListener("click", loadDemo);
+
+  $("#veil").addEventListener("click", e => { if (e.target.id === "veil") closeDialog(); });
+  $("#finale").addEventListener("click", closeFinale);
+  $("#finale-x").addEventListener("click", closeFinale);
+
+  $("#mute").addEventListener("click", () => {
+    Snd.on = !Snd.on;
+    DB.prefs.muted = !Snd.on; saveLocal();
+    $("#mute").textContent = Snd.on ? "♪ 開" : "♪ 關";
+    $("#mute").style.opacity = Snd.on ? "1" : ".5";
+    note(Snd.on ? "音效已開啟" : "音效已關閉");
+  });
+
+  let eggHits = 0, eggTimer = null;
+  $(".masthead").addEventListener("click", () => {
+    clearTimeout(eggTimer);
+    eggTimer = setTimeout(() => { eggHits = 0; }, 1200);
+    if (++eggHits < 5) return;
+    eggHits = 0;
+    if ($(".overtime")) return;
+    const e = document.createElement("div");
+    e.className = "overtime paper";
+    e.title = "點一下收起來";
+    const a = document.createElement("div"); a.className = "a"; a.textContent = "加班中";
+    const b = document.createElement("div"); b.className = "b"; b.textContent = "OVERTIME";
+    e.appendChild(a); e.appendChild(b);
+    e.addEventListener("click", () => e.remove());
+    document.body.appendChild(e);
+    Snd.play("stamp");
+    note("辛苦了，記得早點下班。", "seal");
+  });
+
+  $("#linkchip").addEventListener("click", () => {
+    switchView("view-setup");
+    setTimeout(() => $("#in-endpoint").focus(), 120);
+  });
+
+  document.addEventListener("keydown", e => {
+    if (e.target.matches("input,textarea,select")) return;
+    if (e.key === "Escape") { closeDialog(); closeFinale(); }
+    if (e.key === "ArrowLeft"  && view !== "view-month") $("#day-prev").click();
+    if (e.key === "ArrowRight" && view !== "view-month") $("#day-next").click();
+    if (e.key >= "1" && e.key <= "4") $$(".tab")[Number(e.key) - 1].click();
+  });
+
+  /* 跨分頁同步（同一台電腦開兩個視窗） */
+  window.addEventListener("storage", e => {
+    if (e.key === APP.key && e.newValue) {
+      try {
+        const p = JSON.parse(e.newValue);
+        DB = mergeDB(DB, p); renderAll();
+      } catch (err) {}
+    }
+  });
+}
+
+function useLex(key) {
+  LEX = LEX_SETS[key] || LEX_SETS.corp;
+  DB.prefs.lex = LEX_SETS[key] ? key : "corp";
+}
+
+/* 把語彙表套進固定在 HTML 裡的標題 */
+function applyLex() {
+  const set = (id, t) => { const e = $(id); if (e) e.textContent = t; };
+  set("#cap-new", LEX.newCap);   set("#note-new", LEX.newNote);
+  set("#cap-fix", LEX.fixCap);   set("#note-fix", LEX.fixNote);
+  set("#cap-board", LEX.boardCap);
+  set("#cap-brief", LEX.briefCap);
+  const tb = document.querySelector('.tab[data-view="view-brief"]');
+  if (tb) tb.textContent = LEX.briefCap;
+  set("#board-check", LEX.checkBtn);
+  const tab = document.querySelector('.tab[data-view="view-board"]');
+  if (tab) tab.textContent = LEX.boardCap;
+}
+
+/* ================================================================
+   啟動
+   ================================================================ */
+function boot() {
+  const had = loadLocal();
+  try {
+    const lastDay = localStorage.getItem(APP.key + ".last");
+    if (lastDay && /^\d{4}-\d{2}-\d{2}$/.test(lastDay)) cur = lastDay;
+    /* 若上次使用的是更早的日期，且今天已是新的一天，預設回到今天 */
+    if (!lastDay) cur = today();
+  } catch (e) {}
+  if (cur < today()) cur = today();
+  /* 週末開啟（例如週日晚上備課）時，直接跳到下一個上班日 */
+  if (isWeekend(cur)) cur = shiftWork(cur, 1);
+
+  useLex((DB.prefs && DB.prefs.lex) || "corp");
+  Snd.on = !(DB.prefs && DB.prefs.muted);
+  $("#mute").textContent = Snd.on ? "♪ 開" : "♪ 關";
+  $("#mute").style.opacity = Snd.on ? "1" : ".5";
+
+  calMonth = dparse(cur);
+  applyLex();
+  bind();
+  renderHead();
+
+  let start = "view-month";
+  try {
+    const v = localStorage.getItem(APP.key + ".view");
+    if (v && $("#" + v)) start = v;
+  } catch (e) {}
+  if (!had) start = "view-setup";
+  switchView(start);
+
+  Remote.start();
+
+  if (!had) {
+    setTimeout(() => {
+      const body = document.createElement("div");
+      body.className = "dlg-note"; body.style.fontSize = "1rem";
+      body.innerHTML =
+        "歡迎使用。建議依序完成：<br><br>" +
+        "<b>壹</b>　填寫單位名稱（顯示在畫面最上方）<br>" +
+        "<b>貳</b>　貼上員工名冊，一行一人：<code>座號　姓名　組別</code><br>" +
+        "<b>參</b>　按右上角「儲存設定」<br><br>" +
+        "完成後回到「營運月報」點選日期，就能開始每天的紀錄。<br>" +
+        "想先看看長什麼樣子，可以按「載入示範資料」。<br><br>" +
+        "多台電腦共用、家長電子聯絡簿等進階設定，都寫在使用說明裡。";
+      showDialog("開始建檔", "首次使用", body, [
+        ["載入示範資料看看", "btn", () => { closeDialog(); loadDemo(); }],
+        ["打開使用說明", "btn btn-ghost", () => { window.open("說明.html", "_blank"); }],
+        ["我自己來", "btn btn-seal", closeDialog]
+      ]);
+    }, 420);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", boot);
+</script>
+</body>
+</html>
