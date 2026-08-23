@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>業務進度板　使用說明</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#e9dcc0;--paper-hi:#f6efdd;--paper-lo:#dccdac;--edge:#c2b18d;
+  --ink:#2a231c;--ink-soft:#655a4e;--ink-faint:#958776;
+  --seal:#b8342a;--seal-deep:#8d2119;--seal-wash:rgba(184,52,42,.08);
+  --gov:#1d4e7a;--gov-wash:rgba(29,78,122,.08);
+  --gold:#a8842c;--gold-wash:rgba(168,132,44,.12);--rule:#bcaa84;
+  --serif:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --mono:"SFMono-Regular",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;font-family:var(--sans);color:var(--ink);line-height:1.9;
+  background:#2b211a radial-gradient(ellipse 120% 70% at 50% 0%,#4a3a2c 0%,#2b211a 55%,#191310 100%) fixed;
+  padding:0 0 60px;-webkit-text-size-adjust:100%;
+}
+.wrap{max-width:830px;margin:0 auto;padding:0 12px}
+.sheet{
+  background-color:var(--paper);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='.13'/%3E%3C/svg%3E"),
+    linear-gradient(168deg,var(--paper-hi) 0%,var(--paper) 45%,var(--paper-lo) 100%);
+  border:1px solid var(--edge);border-radius:3px;
+  box-shadow:0 2px 4px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,.45);
+  padding:30px 30px 38px;margin:18px 0;
+}
+.mast{border-bottom:2.5px solid var(--ink);padding-bottom:12px;margin-bottom:6px;position:relative}
+.mast::after{content:'';position:absolute;left:0;right:0;bottom:-5px;height:1px;background:var(--ink)}
+.mast .t1{font-family:var(--serif);font-weight:900;font-size:2rem;letter-spacing:.2em}
+.mast .t2{font-family:var(--serif);font-size:.9rem;letter-spacing:.2em;color:var(--ink-soft);margin-top:4px}
+
+/* 兩個入口 */
+.pick{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:22px 0 4px}
+.pick a{
+  display:block;text-decoration:none;color:var(--ink);
+  border:2px solid var(--rule);border-radius:3px;background:rgba(255,255,255,.5);
+  padding:15px 17px;transition:all .15s;
+}
+.pick a:hover{background:#fff;border-color:var(--ink-soft);transform:translateY(-2px)}
+.pick .lv{font-family:var(--serif);font-size:.78rem;letter-spacing:.24em;color:var(--ink-faint)}
+.pick .tt{font-family:var(--serif);font-weight:900;font-size:1.24rem;letter-spacing:.14em;margin:2px 0 5px}
+.pick .dd{font-size:.87rem;color:var(--ink-soft);line-height:1.75}
+.pick a.a1{border-color:var(--gov)} .pick a.a1 .tt{color:var(--gov)}
+.pick a.a2{border-color:var(--gold)} .pick a.a2 .tt{color:#7a5f16}
+
+/* 分部橫幅 */
+.part{
+  margin:52px 0 6px;padding:17px 22px;border-radius:3px;
+  background:linear-gradient(180deg,#5c4a37,#3f3227);color:#f0e3c6;
+  box-shadow:0 5px 16px rgba(0,0,0,.35);scroll-margin-top:10px;
+}
+.part .pn{font-family:var(--serif);font-size:.76rem;letter-spacing:.32em;color:#c9b48a}
+.part .pt{font-family:var(--serif);font-weight:900;font-size:1.6rem;letter-spacing:.2em;margin-top:1px}
+.part .pd{font-size:.9rem;color:#cdbb9a;margin-top:7px;line-height:1.8}
+.part.gold{background:linear-gradient(180deg,#6b5423,#4a3a18)}
+.part.gold .pn{color:#e2c98f}
+
+h2{
+  font-family:var(--serif);font-weight:900;font-size:1.28rem;letter-spacing:.14em;
+  margin:34px 0 4px;padding-bottom:5px;border-bottom:2px solid var(--ink);
+  display:flex;align-items:baseline;gap:11px;scroll-margin-top:12px;
+}
+h2 .no{
+  font-family:var(--mono);font-size:.86rem;font-weight:700;
+  color:#fff;background:var(--ink-soft);border-radius:50%;
+  width:25px;height:25px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;
+}
+h3{font-family:var(--serif);font-weight:700;font-size:1.04rem;letter-spacing:.1em;
+   margin:22px 0 4px;color:var(--gov)}
+p{margin:9px 0}
+b{color:var(--seal-deep)}
+code{
+  font-family:var(--mono);font-size:.88em;background:rgba(255,255,255,.72);
+  border:1px solid var(--rule);border-radius:2px;padding:1px 5px;word-break:break-all;
+}
+pre{
+  font-family:var(--mono);font-size:.84rem;line-height:1.7;
+  background:#2f2721;color:#e6dcc6;border-radius:3px;
+  padding:13px 15px;overflow-x:auto;margin:12px 0;
+}
+ol.steps{counter-reset:s;list-style:none;padding:0;margin:14px 0}
+ol.steps > li{
+  counter-increment:s;position:relative;padding:0 0 17px 44px;margin:0;
+  border-left:2px solid var(--rule);
+}
+ol.steps > li:last-child{border-left-color:transparent;padding-bottom:0}
+ol.steps > li::before{
+  content:counter(s);position:absolute;left:-15px;top:0;
+  width:28px;height:28px;border-radius:50%;
+  background:var(--paper-hi);border:2px solid var(--ink-soft);color:var(--ink);
+  font-family:var(--mono);font-weight:700;font-size:.86rem;
+  display:flex;align-items:center;justify-content:center;
+}
+ol.steps > li > .h{font-family:var(--serif);font-weight:700;font-size:1.05rem;
+  letter-spacing:.06em;display:block;margin-bottom:2px;padding-top:2px}
+ul.plain{margin:8px 0;padding-left:22px}
+ul.plain li{margin:5px 0}
+
+.note,.warn,.tip{border-left:5px solid;border-radius:2px;padding:12px 16px;margin:16px 0;font-size:.95rem}
+.note{border-color:var(--gov);background:var(--gov-wash)}
+.warn{border-color:var(--seal);background:var(--seal-wash)}
+.tip{border-color:var(--gold);background:var(--gold-wash)}
+.note .lb,.warn .lb,.tip .lb{
+  font-family:var(--serif);font-weight:900;letter-spacing:.14em;font-size:.86rem;
+  display:block;margin-bottom:3px;
+}
+.note .lb{color:var(--gov)} .warn .lb{color:var(--seal-deep)} .tip .lb{color:#7a5f16}
+
+table{border-collapse:collapse;width:100%;margin:14px 0;font-size:.93rem}
+th,td{border:1px solid var(--rule);padding:8px 11px;text-align:left;vertical-align:top}
+th{background:rgba(107,95,82,.14);font-family:var(--serif);font-weight:700;letter-spacing:.08em}
+td code{background:rgba(255,255,255,.85)}
+
+.qa{border-top:1px solid var(--rule);padding-top:11px;margin-top:11px}
+.qa .q{font-family:var(--serif);font-weight:700;font-size:1rem;color:var(--ink)}
+.qa .q::before{content:'問　';color:var(--seal)}
+.qa .a{color:var(--ink-soft);font-size:.94rem;margin-top:1px}
+.qa .a::before{content:'答　';color:var(--gov);font-family:var(--serif);font-weight:700}
+
+.codebox{margin:14px 0;border:1px solid var(--rule);border-radius:3px;overflow:hidden}
+.codebar{display:flex;align-items:center;gap:10px;background:rgba(107,95,82,.16);
+  padding:7px 12px;border-bottom:1px solid var(--rule)}
+.codebar .fn{font-family:var(--mono);font-weight:700;font-size:.88rem;color:var(--seal-deep)}
+.codebar .meta{font-size:.78rem;color:var(--ink-soft)}
+.codebar .sp{flex:1}
+.codebar button{
+  font-family:var(--serif);font-weight:700;font-size:.84rem;letter-spacing:.08em;cursor:pointer;
+  background:linear-gradient(180deg,#c4483c,#a12b21);color:#fff;
+  border:1.5px solid var(--seal-deep);border-radius:2px;padding:5px 14px;
+}
+.codebar button:active{transform:translateY(1px)}
+.codebar button.done{background:linear-gradient(180deg,#4a8a4e,#2f6b34);border-color:#245227}
+.codebox pre{margin:0;border-radius:0;max-height:300px}
+.codebox.open pre{max-height:none}
+.codetoggle{
+  width:100%;background:rgba(107,95,82,.1);border:0;border-top:1px solid var(--rule);
+  font-family:var(--serif);font-size:.84rem;letter-spacing:.1em;color:var(--ink-soft);
+  padding:6px;cursor:pointer;
+}
+.codetoggle:hover{background:rgba(107,95,82,.18)}
+
+.top{display:block;text-align:center;margin-top:26px;font-family:var(--serif);
+  font-size:.84rem;letter-spacing:.14em;color:var(--ink-soft);text-decoration:none}
+.top:hover{color:var(--ink)}
+.foot{text-align:center;color:#8d7f6c;font-size:.78rem;line-height:2;margin-top:12px}
+@media (max-width:560px){
+  .sheet{padding:20px 16px 26px}
+  .mast .t1{font-size:1.5rem}
+  .pick{grid-template-columns:1fr}
+  h2{font-size:1.1rem}
+  ol.steps > li{padding-left:34px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="sheet" id="top">
+
+<div class="mast">
+  <div class="t1">業務進度板</div>
+  <div class="t2">使用說明　│　班級聯絡簿與作業訂正追蹤</div>
+</div>
+
+<p>這是一個網頁工具，用來把每天的聯絡簿投影在教室螢幕上，
+順便追蹤每個人的作業訂正有沒有完成。
+<b>不用下載、不用安裝、不用註冊、不用錢</b>，把網址存成書籤就能開始用。</p>
+
+<div class="pick">
+  <a class="a1" href="#basic">
+    <div class="lv">初 階</div>
+    <div class="tt">先會用就好</div>
+    <div class="dd">在自己班上發布聯絡簿、追蹤訂正進度。
+      只要會用瀏覽器就行，五分鐘看完。</div>
+  </a>
+  <a class="a2" href="#adv">
+    <div class="lv">進 階</div>
+    <div class="tt">還想多做一點</div>
+    <div class="dd">換電腦也看得到同一份資料、
+      讓家長用手機看孩子的聯絡簿。要多花點時間設定。</div>
+  </a>
+</div>
+
+<div class="tip">
+  <span class="lb">不確定要看哪邊</span>
+  <b>先看初階就好。</b>進階的東西不設定，程式一樣完整可以用，
+  只是資料只留在你這一台電腦。等用順手了再回來看也不遲。
+</div>
+
+
+<!-- ==================== 第一部分 ==================== -->
+<div class="part" id="basic">
+  <div class="pn">第 一 部 分</div>
+  <div class="pt">基本功能</div>
+  <div class="pd">在班上發布聯絡簿、追蹤作業訂正。這一部分看完就夠用了。</div>
+</div>
+
+
+<h2><span class="no">1</span>開始使用</h2>
+
+<ol class="steps">
+  <li><span class="h">打開網址</span>
+    第一次會跳出一個小視窗問你要不要載入示範資料。
+    <b>建議先按「載入示範資料看看」</b>，裡面有假的 24 個學生，
+    可以隨便亂點試試看，不會弄壞任何東西。</li>
+  <li><span class="h">試玩完，清乾淨</span>
+    上方點「設定」，往下找到<b>「新學年重新建檔」</b>按下去，
+    示範資料就清掉了。</li>
+  <li><span class="h">填上你的班級名稱</span>
+    設定的第一區「基本資料」：
+    <ul class="plain">
+      <li><b>單位名稱</b>　例如「光明國小　六年二班」</li>
+      <li><b>副標題</b>　隨便寫，或留空</li>
+      <li><b>承辦人</b>　填你的名字</li>
+    </ul>
+    </li>
+  <li><span class="h">貼上學生名單</span>
+    第二區「員工名冊」的左邊那個大格子，<b>一行一個人</b>，這樣寫：
+    <pre>1 王小明 1
+2 李小華 1
+3 張小美 2
+4 陳大文 2</pre>
+    前面是座號，中間是姓名，最後是第幾組。<b>組別要用阿拉伯數字</b>（1、2、3），
+    寫「第一組」它會排不好。<br>
+    右邊那格可以幫每一組取名字（例如「晨星科技」），不想取就空著。</li>
+  <li><span class="h">按右上角「儲存設定」</span>
+    完成了。上方點「營運月報」，點一下今天的日期就可以開始用。</li>
+</ol>
+
+<h3>順便挑一下用詞</h3>
+<p>設定第一區最下面有個「情境用語」的下拉選單，有四種說法可以選：</p>
+<table>
+  <tr><th style="width:130px">企業簽核版</th><td>接案 → 待簽核 → 蓋「核准」章（預設）</td></tr>
+  <tr><th>公務機關版</th><td>交辦 → 陳核 → 蓋「照准」章</td></tr>
+  <tr><th>品管驗收版</th><td>投產 → 待檢驗 → 蓋「允收」章</td></tr>
+  <tr><th>白話直說版</th><td>今日作業 → 今日訂正 → 蓋「完成」章</td></tr>
+</table>
+<p>選哪個都不影響功能，換了整個畫面的字就跟著換。
+中低年級或不想玩情境的話，選<b>白話直說版</b>最單純。</p>
+
+
+<h2><span class="no">2</span>每天怎麼用</h2>
+
+<table>
+  <tr><th style="width:110px">早上</th>
+      <td>點「今日工作單」，<b>點一下上半區</b>，把今天要抄的聯絡簿內容打進去，一行一項。<br>
+          某一行前面加一個 <code>*</code>，那一行就會變成紅色的提醒（例如「明天帶水壺」）。</td></tr>
+  <tr><th>批改完</th>
+      <td><b>點一下下半區</b>，把今天要訂正的作業打進去。<br>
+          每打一項，全班每個人就會多出一個空格子等著蓋章。</td></tr>
+  <tr><th>訂正的時候</th>
+      <td>點「簽核進度」。誰完成了就<b>點他那一格</b>，會蓋上一個紅章。<br>
+          點錯了再點一次就取消。<br>
+          <b>點組別的標題</b>可以整組一次全部蓋完或全部取消。<br>
+          有些人本來就不用訂正？直接幫他點掉就好。</td></tr>
+  <tr><th>全班都完成</th>
+      <td>自動跳出一張獎狀和音效。點旁邊或按 Esc 關掉。</td></tr>
+  <tr><th>欠很久的人</th>
+      <td>畫面下方有一個紅色的「催件名單」，把他加進去。<br>
+          點他的名字可以列出他還欠哪幾樣，補一樣打勾一樣，
+          全部補完按「予以結案」就移出名單。<br>
+          名單清空的時候會再跳一張金色的獎狀。</td></tr>
+  <tr><th>隔天</th>
+      <td>昨天沒完成的，會自動變成工作單最下面一條小字，
+          <b>直接寫出是哪幾位同學</b>，不會佔掉整個版面。</td></tr>
+</table>
+
+<h3>幾個好用的地方</h3>
+<ul class="plain">
+  <li>投影的時候<b>字會自動放大</b>填滿螢幕，項目少的時候字特別大。右上角 <b>Ａ＋ Ａ−</b> 可以再微調。</li>
+  <li>學生換組別？<b>直接用滑鼠把名字拖到別組去</b>就好。</li>
+  <li>鍵盤 <code>1</code> <code>2</code> <code>3</code> <code>4</code> 切換上面四個分頁，
+      <code>←</code> <code>→</code> 換日期。</li>
+  <li>右上角的 <b>♪</b> 可以關掉音效。</li>
+  <li>連續好幾天全班都完成，月曆上方會浮出一面金色小旗子。</li>
+</ul>
+
+
+<h2><span class="no">3</span>非常重要：記得備份</h2>
+
+<div class="warn">
+  <span class="lb">請務必看完這一段</span>
+  你的資料是存在<b>這一台電腦的這個瀏覽器裡面</b>。<br>
+  關掉分頁、關機、隔天再開，資料都還在，這沒問題。<br>
+  但是——<b>換一台電腦、換一個瀏覽器、或是有人清理了瀏覽紀錄，資料就沒了</b>，
+  而且救不回來。
+</div>
+
+<p>所以請養成習慣：<b>每個禮拜五</b>，到「設定 → 資料保存」按一下
+<b>「匯出備份檔」</b>。它會下載一個檔案，把它丟到你的 Google 雲端硬碟或隨身碟收好。</p>
+
+<p>萬一資料真的不見了，或是要換電腦，就在新電腦上打開同一個網址，
+按<b>「匯入備份檔」</b>，選那個檔案，資料就回來了。</p>
+
+<div class="note">
+  <span class="lb">怕忘記的話</span>
+  第二部分有教怎麼接上 Google 試算表自動保存，就不用每週手動備份了。
+  但那個要花約十五分鐘設定，看你要不要。
+</div>
+
+
+<h2><span class="no">4</span>新學年、轉學生</h2>
+
+<table>
+  <tr><th style="width:150px">中途轉來轉走</th>
+      <td>直接去「設定 → 員工名冊」改就好。
+          插一個人進去、刪掉一個人、調座號，<b>以前的紀錄都不會亂掉</b>。</td></tr>
+  <tr><th>新學年重新開始</th>
+      <td>「設定 → 資料保存 → 新學年重新建檔」。
+          按下去會<b>先自動下載一份舊資料的備份</b>再清空，
+          只留下班級名稱。然後貼上新的名單就好。</td></tr>
+  <tr><th>同一台電腦兩個班</th>
+      <td>在網址最後面加上 <code>?c=602</code>（602 換成你要的代號），
+          就會變成完全獨立的另一份。把兩個網址各存一個書籤。</td></tr>
+</table>
+
+
+<h2><span class="no">5</span>常見問題</h2>
+
+<div class="qa">
+  <div class="q">投影出來字太小／太大</div>
+  <div class="a">工作單那一頁右上角有 <b>Ａ＋ Ａ−</b>。
+    想調整整個畫面的話，按住 <code>Ctrl</code> 再滾滑鼠滾輪。</div>
+</div>
+<div class="qa">
+  <div class="q">昨天的紀錄不見了</div>
+  <div class="a">先確認是不是<b>換了一台電腦或換了瀏覽器</b>——資料不會跟著人跑。
+    如果是同一台同一個瀏覽器卻不見了，可能是瀏覽器被清理過，
+    這時候只能靠備份檔還原。</div>
+</div>
+<div class="qa">
+  <div class="q">不小心按到「新學年重新建檔」</div>
+  <div class="a">它按下去之前會先幫你下載一份備份，
+    去「下載」資料夾找那個檔案，用「匯入備份檔」救回來。</div>
+</div>
+<div class="qa">
+  <div class="q">改了東西但畫面沒變</div>
+  <div class="a">按 <code>Ctrl</code> + <code>Shift</code> + <code>R</code> 重新整理一次。</div>
+</div>
+<div class="qa">
+  <div class="q">學生會不會亂改？</div>
+  <div class="a">會，程式沒有上鎖。所以建議由你自己或固定的幹部操作，
+    畫面就投在大家眼前，改了什麼大家都看得到。</div>
+</div>
+
+<a class="top" href="#top">▲ 回到最上面</a>
+
+
+<!-- ==================== 第二部分 ==================== -->
+<div class="part gold" id="adv">
+  <div class="pn">第 二 部 分</div>
+  <div class="pt">進階功能</div>
+  <div class="pd">兩件事：一是讓你在不同電腦看到同一份資料，二是讓家長用手機看孩子的聯絡簿。
+    兩個都是選用的，不設定完全不影響前面的功能。</div>
+</div>
+
+<div class="note">
+  <span class="lb">先說清楚要花多少工</span>
+  下面的步驟大概要 <b>十五到二十分鐘</b>，要用到你的 Google 帳號。
+  過程中會需要複製一段程式碼、按幾個按鈕，<b>不用會寫程式</b>，照著做就好。<br>
+  如果中途卡住，放棄也沒關係——前面的功能完全不受影響。
+</div>
+
+
+<h2><span class="no">6</span>讓不同電腦看到同一份資料</h2>
+
+<p>預設每台電腦各記各的：教室電腦記教室的，辦公室電腦記辦公室的，互相看不到。</p>
+<p>想讓它們共用同一份，就要找一個大家都連得到的地方存資料。
+這裡用<b>你自己的 Google 試算表</b>——資料放在你自己的雲端硬碟，
+不會經過我，也不會經過任何別人。</p>
+<p>順帶一提，接上之後<b>就不用每週手動備份了</b>，它會自動存。</p>
+
+<ol class="steps">
+  <li><span class="h">開一份新的 Google 試算表</span>
+    在瀏覽器網址列輸入 <code>sheets.new</code> 按 Enter，
+    會直接開一份新的空白試算表。左上角幫它取個名字，例如「六年二班　進度板」。</li>
+
+  <li><span class="h">打開「Apps Script」</span>
+    在試算表最上面那排選單找到 <b>擴充功能</b>，點進去選 <b>Apps Script</b>。
+    會跳出一個新分頁，裡面有一片空白的程式碼區域。</li>
+
+  <li><span class="h">把裡面原本的東西全部刪掉</span>
+    在那片程式碼區域裡點一下，按 <code>Ctrl</code>+<code>A</code> 全選，
+    再按 <code>Delete</code> 刪掉。</li>
+
+  <li><span class="h">複製下面這段，貼進去</span>
+    按下右邊的「複製全部」，然後回到剛剛那片空白區域按 <code>Ctrl</code>+<code>V</code> 貼上。
+
+    <div class="codebox" id="cb">
+      <div class="codebar">
+        <span class="fn">要複製的程式碼</span>
+        <span class="meta" id="cb-meta"></span>
+        <span class="sp"></span>
+        <button id="cb-copy">複製全部</button>
+      </div>
+      <pre id="cb-pre">/**********************************************************************
+ * 業務進度板 —— Google 試算表後端
+ *
+ * 用途：讓多台電腦共同編輯同一份紀錄，並提供家長專屬的唯讀檢視。
+ * 安裝：見「說明.html」的圖文教學。簡單講就是
+ *        試算表 → 擴充功能 → Apps Script → 貼上這整份 → 部署為網頁應用程式
+ *
+ * 資料存放：JSON 檔存在這份試算表旁邊的 Drive 資料夾裡，
+ *          試算表本身只放一份「看得懂的檢視表」（可隨時手動更新）。
+ *
+ * 這份程式不會把資料傳給任何第三方，全部留在老師自己的 Google 帳號裡。
+ **********************************************************************/
+
+/* ---------------------------------------------------------------------
+   選用：連線密碼
+   留空 = 只要知道網址的人都能讀寫（網址很長很難猜，但畢竟是公開的）。
+   想多一層保護的話，在這裡填一段自訂密碼，例如 'ming2026'，
+   然後在程式的「共用連線」欄位貼成：
+       https://script.google.com/macros/s/XXXX/exec?k=ming2026
+   家長頁不受影響，家長仍然只用自己的六碼代碼。
+   --------------------------------------------------------------------- */
+var ACCESS_KEY = '';
+
+var PROP_FILE = 'BOARD_FILE_ID';
+var PROP_REV  = 'BOARD_REV';
+var DATA_NAME = '業務進度板_資料.json';
+var TZ        = 'Asia/Taipei';
+var LOCK_MS   = 25000;
+
+/* ==================================================================
+   對外入口
+   ================================================================== */
+
+function doPost(e) {
+  var out;
+  try {
+    var body = JSON.parse(e.postData.contents);
+    out = route_(body, (e &amp;&amp; e.parameter) || {});
+  } catch (err) {
+    out = { ok: false, error: String(err) };
+  }
+  return json_(out);
+}
+
+function doGet(e) {
+  var p = (e &amp;&amp; e.parameter) || {};
+  if (p.action) return json_(route_(p, p));
+  return HtmlService.createHtmlOutput(
+    '&lt;div style="font-family:sans-serif;padding:28px;line-height:1.8"&gt;' +
+    '&lt;h2 style="margin:0 0 10px"&gt;業務進度板 —— 後端運作中 ✓&lt;/h2&gt;' +
+    '&lt;p&gt;部署成功了。請把&lt;b&gt;目前這一頁的網址&lt;/b&gt;複製起來，' +
+    '貼進程式「設定 → 肆、共用連線」的欄位裡。&lt;/p&gt;' +
+    '&lt;p style="color:#777;font-size:.9em"&gt;網址結尾應該是 &lt;code&gt;/exec&lt;/code&gt;。' +
+    '這一頁沒有任何資料，可以放心關掉。&lt;/p&gt;&lt;/div&gt;'
+  );
+}
+
+function route_(body, query) {
+  switch (body.action) {
+    case 'ping':
+      return { ok: true, ver: 1, time: stamp_(), locked: !!ACCESS_KEY };
+    case 'get':
+      if (!authed_(query, body)) return { ok: false, error: 'auth' };
+      return read_();
+    case 'put':
+      if (!authed_(query, body)) return { ok: false, error: 'auth' };
+      return write_(body);
+    case 'parent':
+      return parentView_(body);          /* 家長端用自己的六碼代碼，不需要連線密碼 */
+    default:
+      return { ok: false, error: 'unknown action' };
+  }
+}
+
+function authed_(query, body) {
+  if (!ACCESS_KEY) return true;
+  var k = (query &amp;&amp; query.k) || (body &amp;&amp; body.key) || '';
+  return String(k) === String(ACCESS_KEY);
+}
+
+function json_(o) {
+  return ContentService.createTextOutput(JSON.stringify(o))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function stamp_() {
+  return Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd HH:mm:ss');
+}
+function todayStr_() {
+  return Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd');
+}
+
+/* ==================================================================
+   讀寫
+   ================================================================== */
+
+function dataFile_(createIfMissing) {
+  var props = PropertiesService.getScriptProperties();
+  var id = props.getProperty(PROP_FILE);
+  if (id) {
+    try { return DriveApp.getFileById(id); } catch (err) { /* 檔案被刪掉了 */ }
+  }
+  if (!createIfMissing) return null;
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var parents = DriveApp.getFileById(ss.getId()).getParents();
+  var folder = parents.hasNext() ? parents.next() : DriveApp.getRootFolder();
+  var f = folder.createFile(DATA_NAME, '{}', 'application/json');
+  props.setProperty(PROP_FILE, f.getId());
+  return f;
+}
+
+function read_() {
+  var props = PropertiesService.getScriptProperties();
+  var rev = Number(props.getProperty(PROP_REV) || 0);
+  var f = dataFile_(false);
+  if (!f) return { ok: true, rev: 0, data: null };
+  try {
+    var txt = f.getBlob().getDataAsString('UTF-8');
+    var data = JSON.parse(txt);
+    if (!data || !data.students) return { ok: true, rev: rev, data: null };
+    return { ok: true, rev: rev, data: data };
+  } catch (err) {
+    return { ok: true, rev: rev, data: null };
+  }
+}
+
+function write_(body) {
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(LOCK_MS)) return { ok: false, error: 'busy' };
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var rev = Number(props.getProperty(PROP_REV) || 0);
+    var sent = Number(body.rev || 0);
+
+    /* 版本不一致 —— 有人搶先存過了，把雲端目前的內容送回去讓程式自己合併 */
+    if (sent !== rev) {
+      var cur = read_();
+      return { ok: false, conflict: true, rev: cur.rev, data: cur.data };
+    }
+    if (!body.data || !body.data.students) return { ok: false, error: 'empty data' };
+
+    dataFile_(true).setContent(JSON.stringify(body.data));
+    rev = rev + 1;
+    props.setProperty(PROP_REV, String(rev));
+    noteStatus_(body.data, rev);
+    return { ok: true, rev: rev };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/* 在試算表第一張表寫幾行狀態，讓老師打開試算表就知道有沒有在跑 */
+function noteStatus_(data, rev) {
+  try {
+    var sh = sheet_('連線狀態');
+    sh.clear();
+    var students = (data.students &amp;&amp; data.students.list) || [];
+    var days = Object.keys(data.days || {}).length;
+    sh.getRange(1, 1, 6, 2).setValues([
+      ['業務進度板　連線狀態', ''],
+      ['最後更新', stamp_()],
+      ['版本號', rev],
+      ['名冊人數', students.length],
+      ['已建檔天數', days],
+      ['說明', '資料本體在同資料夾的 ' + DATA_NAME + '。要看得懂的表格請用上方「業務進度板」選單 →「更新檢視表」。']
+    ]);
+    sh.getRange(1, 1).setFontWeight('bold').setFontSize(13);
+    sh.getRange(1, 1, 6, 1).setFontWeight('bold');
+    sh.setColumnWidth(1, 130);
+    sh.setColumnWidth(2, 560);
+  } catch (err) { /* 寫狀態失敗不影響存檔 */ }
+}
+
+function sheet_(name) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  return ss.getSheetByName(name) || ss.insertSheet(name);
+}
+
+/* ==================================================================
+   家長檢視 —— 只回傳該名學生的資料，其他同學的姓名與進度不會離開伺服器
+   ================================================================== */
+
+function parentView_(body) {
+  var r = read_();
+  var data = r.data;
+  if (!data) return { ok: false, reason: 'nodata' };
+  if (!data.prefs || !data.prefs.parent) return { ok: false, reason: 'closed' };
+
+  var code = String(body.code || '').trim().toUpperCase();
+  if (!code) return { ok: false, reason: 'bad' };
+
+  var list = (data.students &amp;&amp; data.students.list) || [];
+  var me = null;
+  for (var i = 0; i &lt; list.length; i++) {
+    if (String(list[i].code || '').toUpperCase() === code) { me = list[i]; break; }
+  }
+  if (!me) return { ok: false, reason: 'bad' };
+
+  var days = data.days || {};
+  var date = pickDate_(days, body.date);
+  var rec = days[date] || { notes: [], cases: [], done: {}, watch: [] };
+
+  var cases = (rec.cases || []).map(function (k) {
+    return { text: k.text, done: !!(rec.done || {})[me.id + '|' + k.id] };
+  });
+  var notes = (rec.notes || []).map(function (n) {
+    return { text: n.text, flag: !!n.flag };
+  });
+
+  /* 這孩子的補件清單（若有被列入催件名單） */
+  var owing = [];
+  var fl = (data.flags || {})[me.id];
+  if (fl &amp;&amp; !fl.gone) {
+    owing = (fl.items || []).filter(function (it) { return !it.done; })
+                            .map(function (it) { return it.text; });
+  }
+  var watched = (rec.watch || []).indexOf(me.id) &gt;= 0;
+
+  /* 最近十個有派工的上班日，給家長看趨勢 */
+  var hist = Object.keys(days).filter(function (d) {
+    return d &lt;= date &amp;&amp; (days[d].cases || []).length;
+  }).sort().slice(-10).map(function (d) {
+    var rr = days[d], total = (rr.cases || []).length, done = 0;
+    (rr.cases || []).forEach(function (k) {
+      if ((rr.done || {})[me.id + '|' + k.id]) done++;
+    });
+    return { date: d, total: total, done: done };
+  });
+
+  return {
+    ok: true,
+    org: { name: (data.org &amp;&amp; data.org.name) || '', sub: (data.org &amp;&amp; data.org.sub) || '',
+           teacher: (data.org &amp;&amp; data.org.teacher) || '' },
+    lex: (data.prefs &amp;&amp; data.prefs.lex) || 'corp',
+    date: date,
+    today: todayStr_(),
+    dates: Object.keys(days).filter(function (d) {
+      return (days[d].notes || []).length || (days[d].cases || []).length;
+    }).sort(),
+    student: { seat: me.seat || '', name: me.name || '' },
+    notes: notes,
+    cases: cases,
+    owing: owing,
+    watched: watched,
+    history: hist
+  };
+}
+
+/* 預設顯示今天。今天還沒發布的話，挑「離今天最近」的一天：
+   通常就是昨天，但若老師已先把明天的內容準備好，就顯示明天。
+   距離一樣時以過去那天為準。 */
+function pickDate_(days, want) {
+  if (want &amp;&amp; days[want]) return want;
+  var t = todayStr_();
+  var has = function (d) {
+    return days[d] &amp;&amp; ((days[d].notes || []).length || (days[d].cases || []).length);
+  };
+  if (has(t)) return t;
+  var ms = function (d) { return new Date(d.replace(/-/g, '/')).getTime(); };
+  var base = ms(t);
+  var best = null, bestGap = Infinity;
+  Object.keys(days).forEach(function (d) {
+    if (!has(d)) return;
+    var gap = Math.abs(ms(d) - base);
+    if (gap &lt; bestGap || (gap === bestGap &amp;&amp; ms(d) &lt; base)) { best = d; bestGap = gap; }
+  });
+  return best || t;
+}
+
+/* ==================================================================
+   給老師看的檢視表（手動更新，不影響日常存檔速度）
+   ================================================================== */
+
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu('業務進度板')
+    .addItem('更新檢視表', 'rebuildView')
+    .addSeparator()
+    .addItem('檢查安裝狀態', 'checkSetup')
+    .addToUi();
+}
+
+function checkSetup() {
+  var r = read_();
+  var ui = SpreadsheetApp.getUi();
+  if (!r.data) {
+    ui.alert('尚未收到任何資料。\n\n請確認：\n' +
+             '1. 已經部署為「網頁應用程式」，且存取權設為「任何人」\n' +
+             '2. 已把 /exec 結尾的網址貼進程式的「共用連線」欄位\n' +
+             '3. 在程式裡改一筆資料，讓它上傳一次');
+    return;
+  }
+  var n = (r.data.students.list || []).length;
+  ui.alert('運作正常 ✓\n\n版本號：' + r.rev +
+           '\n名冊人數：' + n +
+           '\n已建檔天數：' + Object.keys(r.data.days || {}).length +
+           '\n家長檢視：' + (r.data.prefs &amp;&amp; r.data.prefs.parent ? '已啟用' : '關閉') +
+           '\n最後更新：' + stamp_());
+}
+
+function rebuildView() {
+  var r = read_();
+  if (!r.data) {
+    SpreadsheetApp.getUi().alert('目前還沒有資料可以整理。');
+    return;
+  }
+  var data = r.data;
+  buildRoster_(data);
+  buildDaily_(data);
+  buildOpen_(data);
+  SpreadsheetApp.getActiveSpreadsheet().toast('檢視表已更新（' + stamp_() + '）', '業務進度板', 5);
+}
+
+function teamName_(data, t) {
+  if (!t) return '未編組';
+  var m = (data.teams &amp;&amp; data.teams.map) || {};
+  return m[t] || ('第' + t + '組');
+}
+
+function buildRoster_(data) {
+  var sh = sheet_('名冊');
+  sh.clear();
+  var rows = [['座號', '姓名', '組別', '家長代碼']];
+  (data.students.list || []).slice()
+    .sort(function (a, b) { return (a.seat || 0) - (b.seat || 0); })
+    .forEach(function (s) {
+      rows.push([s.seat || '', s.name || '', teamName_(data, s.team), s.code || '']);
+    });
+  sh.getRange(1, 1, rows.length, 4).setValues(rows);
+  sh.getRange(1, 1, 1, 4).setFontWeight('bold').setBackground('#e6d9bc');
+  sh.setFrozenRows(1);
+  sh.autoResizeColumns(1, 4);
+}
+
+function buildDaily_(data) {
+  var sh = sheet_('每日紀錄');
+  sh.clear();
+  var students = data.students.list || [];
+  var rows = [['日期', '星期', '新案件數', '待簽核件數', '已核准格', '總格數', '完成率', '催件人數']];
+  var W = ['日', '一', '二', '三', '四', '五', '六'];
+  Object.keys(data.days || {}).sort().forEach(function (ds) {
+    var d = data.days[ds];
+    var cases = (d.cases || []).length;
+    var total = cases * students.length, done = 0;
+    students.forEach(function (s) {
+      (d.cases || []).forEach(function (k) {
+        if ((d.done || {})[s.id + '|' + k.id]) done++;
+      });
+    });
+    var w = W[new Date(ds.replace(/-/g, '/')).getDay()];
+    rows.push([ds, w, (d.notes || []).length, cases, done, total,
+               total ? Math.round(done / total * 100) / 100 : '',
+               (d.watch || []).length]);
+  });
+  sh.getRange(1, 1, rows.length, 8).setValues(rows);
+  sh.getRange(1, 1, 1, 8).setFontWeight('bold').setBackground('#e6d9bc');
+  if (rows.length &gt; 1) sh.getRange(2, 7, rows.length - 1, 1).setNumberFormat('0%');
+  sh.setFrozenRows(1);
+  sh.autoResizeColumns(1, 8);
+}
+
+function buildOpen_(data) {
+  var sh = sheet_('未結明細');
+  sh.clear();
+  var students = data.students.list || [];
+  var byId = {};
+  students.forEach(function (s) { byId[s.id] = s; });
+
+  var rows = [['日期', '座號', '姓名', '組別', '未完成項目']];
+  var keys = Object.keys(data.days || {}).sort();
+  keys = keys.slice(-40);                       /* 只列最近 40 個建檔日，免得表太長 */
+  keys.forEach(function (ds) {
+    var d = data.days[ds];
+    (d.cases || []).forEach(function (k) {
+      students.forEach(function (s) {
+        if (!(d.done || {})[s.id + '|' + k.id]) {
+          rows.push([ds, s.seat || '', s.name || '', teamName_(data, s.team), k.text]);
+        }
+      });
+    });
+  });
+
+  /* 催件名單另外附在後面 */
+  var flags = data.flags || {};
+  var extra = [];
+  Object.keys(flags).forEach(function (sid) {
+    var f = flags[sid], s = byId[sid];
+    if (!f || f.gone || !s) return;
+    (f.items || []).forEach(function (it) {
+      if (!it.done) extra.push(['（催件）', s.seat || '', s.name || '',
+                                teamName_(data, s.team), it.text + '　自 ' + f.since + ' 起']);
+    });
+  });
+  if (extra.length) { rows.push(['', '', '', '', '']); rows = rows.concat(extra); }
+
+  sh.getRange(1, 1, rows.length, 5).setValues(rows);
+  sh.getRange(1, 1, 1, 5).setFontWeight('bold').setBackground('#f3d5d1');
+  sh.setFrozenRows(1);
+  sh.autoResizeColumns(1, 5);
+}
+</pre>
+      <button class="codetoggle" id="cb-toggle">展開全部 ▾</button>
+    </div>
+
+    <div class="tip" style="margin:10px 0 0">
+      <span class="lb">不用看懂它</span>
+      這段程式碼的作用只是「幫你把資料存進這份試算表」。
+      你不需要懂它在寫什麼，複製貼上就好。
+    </div>
+  </li>
+
+  <li><span class="h">設一個密碼（請一定要做）</span>
+    貼好之後，在最上面找到這一行：
+    <pre>var ACCESS_KEY = '';</pre>
+    把兩個單引號中間填入你自己想的一組密碼，例如：
+    <pre>var ACCESS_KEY = 'ming2026';</pre>
+    <b>只要改引號中間，其他一個字都別動。</b>
+    請用英文和數字，不要用中文和空格。<br>
+    改好之後按上面的<b>磁片圖示</b>存檔。
+    <div class="warn" style="margin:10px 0 0">
+      <span class="lb">為什麼一定要設</span>
+      不設的話，只要有人知道你等一下拿到的那個網址，
+      就可以看到你全班的資料。設了就進不去。
+    </div>
+  </li>
+
+  <li><span class="h">發布出去</span>
+    右上角有個藍色的 <b>部署</b> 按鈕，點它 → <b>新增部署作業</b>。<br>
+    跳出的視窗左邊有個<b>齒輪圖示</b>，點一下，選 <b>網頁應用程式</b>。<br>
+    然後下面兩個欄位要選對：
+    <ul class="plain">
+      <li>執行身分 → 選 <b>我</b></li>
+      <li>誰可以存取 → 選 <b>所有人</b></li>
+    </ul>
+    按右下角 <b>部署</b>。</li>
+
+  <li><span class="h">同意授權（會嚇你一下，是正常的）</span>
+    它會要求你授權。照這個順序點：
+    <ul class="plain">
+      <li>點 <b>審查權限</b></li>
+      <li>選你自己的 Google 帳號</li>
+      <li>出現紅色的「Google 尚未驗證這個應用程式」→ 點左下角小小的 <b>進階</b></li>
+      <li>再點下面的 <b>前往「○○○」(不安全)</b></li>
+      <li>最後點 <b>允許</b></li>
+    </ul>
+    <div class="note" style="margin:10px 0 0">
+      <span class="lb">那個「不安全」是什麼意思</span>
+      因為這段程式沒有送去 Google 審查過。它只會動你自己這一份試算表，
+      不會碰你的信箱或其他檔案。
+    </div>
+  </li>
+
+  <li><span class="h">複製網址</span>
+    完成後會顯示一段很長的網址，結尾是 <code>/exec</code>，按旁邊的複製。<br>
+    <b>然後在最後面補上你的密碼</b>，變成這樣：
+    <pre>https://script.google.com/macros/s/AKfycb……/exec?k=ming2026</pre>
+    （<code>?k=</code> 後面接你剛才設的那組密碼）</li>
+
+  <li><span class="h">貼回程式裡</span>
+    回到業務進度板，「設定 → 共用連線」，把整段貼進去，按<b>儲存設定</b>。<br>
+    右上角原本寫「本機保存」的地方，會變成綠色的<b>「雲端同步中」</b>，就成功了。</li>
+
+  <li><span class="h">其他電腦</span>
+    在另一台電腦打開同一個網址，一樣到「共用連線」貼上<b>同一段網址</b>，
+    它就會自動把資料抓下來。以後兩邊改的東西會互通。</li>
+</ol>
+
+<h3>之後想看試算表裡的內容</h3>
+<p>打開那份試算表，上面選單會多一個<b>「業務進度板」</b>，
+點它 →「更新檢視表」，就會整理出三張看得懂的表：</p>
+<table>
+  <tr><th style="width:110px">名冊</th><td>座號、姓名、組別、家長代碼</td></tr>
+  <tr><th>每日紀錄</th><td>每天出了幾項、完成幾格、完成率</td></tr>
+  <tr><th>未結明細</th><td>誰的哪一項還沒完成</td></tr>
+</table>
+<p>同一個選單裡的<b>「檢查安裝狀態」</b>可以確認有沒有接好。</p>
+
+<div class="note">
+  <span class="lb">如果以後要改那段程式碼</span>
+  存檔不等於發布。要再去 <b>部署 → 管理部署作業 → 鉛筆圖示 → 版本選「新版本」→ 部署</b>。
+  網址不會變。
+</div>
+
+
+<h2><span class="no">7</span>讓家長用手機看</h2>
+
+<p>開啟之後，每個孩子會有一組六位數的代碼和一個專屬連結。
+家長用手機點開就能看到當天的聯絡簿、自己孩子哪幾項訂正完了、還欠哪些。
+<b>看不到班上其他人</b>。</p>
+
+<div class="warn">
+  <span class="lb">兩個前提</span>
+  一、<b>要先完成上面第 6 節</b>，家長頁是去雲端讀資料的。<br>
+  二、<b>第 6 節的密碼一定要設好</b>。家長連結裡會帶著你的雲端位址，
+  沒設密碼的話，稍微懂技術的人拿到連結就能反過來看到全班資料。
+  你按下啟用的時候，程式也會幫你檢查一次。
+</div>
+
+<ol class="steps">
+  <li><span class="h">啟用</span>
+    「設定 → 家長檢視」，勾選<b>「啟用家長檢視」</b>，
+    再按<b>「產生／補發代碼」</b>。每個學生後面就會出現一組代碼。</li>
+  <li><span class="h">把連結發給家長</span>
+    每個人後面都有<b>「複製連結」</b>，點了就複製好了，直接貼到 LINE 給那位家長。<br>
+    要一次拿全部的話，按<b>「複製全部連結」</b>，貼進 Excel 或 Google 試算表，
+    就是一份座號、姓名、連結的對照表。</li>
+</ol>
+
+<table>
+  <tr><th style="width:150px">想停掉</th>
+      <td>把勾勾取消就好。所有連結<b>立刻</b>失效，不用改任何東西。</td></tr>
+  <tr><th>只想開給部分家長</th>
+      <td>連結是一個一個複製的，<b>你發給誰、誰才看得到</b>。沒發的人就等於沒開。</td></tr>
+  <tr><th>代碼被亂傳</th>
+      <td>按<b>「全部重新產生」</b>，舊的連結全部作廢，再重發一次。</td></tr>
+  <tr><th>新學年</th>
+      <td>名單換新之後，再按一次「產生／補發代碼」就好。</td></tr>
+</table>
+
+<div class="note">
+  <span class="lb">建議的做法</span>
+  不要預設全班都發。先問問學校的規定，
+  再讓家長自己決定要不要，想要的再給連結。
+</div>
+
+
+<h2><span class="no">8</span>進階部分的常見問題</h2>
+
+<div class="qa">
+  <div class="q">右上角一直是「本機保存」，沒有變綠色</div>
+  <div class="a">網址沒填或填錯了。檢查一下：開頭是不是
+    <code>https://script.google.com/</code>，結尾是不是 <code>/exec</code>
+    （不是 <code>/dev</code>），密碼那段是不是 <code>?k=</code> 而不是別的符號。</div>
+</div>
+<div class="qa">
+  <div class="q">出現橘色的「離線．僅存本機」</div>
+  <div class="a">暫時連不到雲端，<b>資料不會不見</b>，還在這台電腦上，
+    網路好了會自己再試。一直這樣的話，去試算表的選單按「檢查安裝狀態」看看。</div>
+</div>
+<div class="qa">
+  <div class="q">學校的帳號不給我「部署」</div>
+  <div class="a">有些學校的 Google 帳號被管理員鎖住這個功能。
+    改用你自己的個人 Gmail 帳號開試算表就可以了。
+    或者就不做這一段，前面的功能完全不受影響。</div>
+</div>
+<div class="qa">
+  <div class="q">兩台電腦同時在改，會不會打架</div>
+  <div class="a">不會。改不同日期完全不衝突；
+    真的改到同一格，以比較晚改的那個為準。</div>
+</div>
+<div class="qa">
+  <div class="q">家長說打開是「尚未開放」</div>
+  <div class="a">「設定 → 家長檢視」的勾勾沒打開，
+    或是剛打開還沒同步上去。確認右上角是綠色的「雲端同步中」再試一次。</div>
+</div>
+<div class="qa">
+  <div class="q">家長說「連結不完整」</div>
+  <div class="a">連結被通訊軟體截斷了。重新用「複製連結」貼一次，
+    確認貼出去的網址裡有 <code>&amp;s=</code> 那一段。</div>
+</div>
+
+
+<h2><span class="no">9</span>資料到底放在哪裡</h2>
+
+<ul class="plain">
+  <li><b>沒有做第 6 節的話</b>——資料只在你這台電腦的瀏覽器裡，
+      沒有任何人看得到，包括提供這個網址的人。</li>
+  <li><b>做了第 6 節之後</b>——資料存在<b>你自己的 Google 雲端硬碟</b>，
+      一樣不會經過別人。</li>
+  <li>那個雲端網址是公開的，所以<b>密碼一定要設</b>。</li>
+  <li>家長的每個連結只顯示一位學生，而且開關一關就全部失效。</li>
+  <li>班級名單和作業紀錄算是學生的個人資料。
+      要不要放上雲端、要不要開放給家長，<b>請先確認學校的規定</b>。</li>
+</ul>
+
+<div class="note">
+  <span class="lb">想自己架一份？</span>
+  這個程式就是三個網頁檔，可以自由拿去改。
+  在程式頁面按 <code>Ctrl</code>+<code>S</code> 存下來，
+  丟到自己的 GitHub Pages 就行。程式最上面有一整塊字表，
+  可以把所有用詞改成你自己班上的說法。
+</div>
+
+<a class="top" href="#top">▲ 回到最上面</a>
+
+<div class="foot">
+  業務進度板　│　可自由使用、修改與分享
+</div>
+
+</div>
+</div>
+
+<script>
+(function () {
+  var pre = document.getElementById('cb-pre');
+  var box = document.getElementById('cb');
+  var btn = document.getElementById('cb-copy');
+  var tog = document.getElementById('cb-toggle');
+  var meta = document.getElementById('cb-meta');
+  var src = pre.textContent;
+  meta.textContent = src.split('\n').length + ' 行';
+
+  btn.addEventListener('click', function () {
+    var done = function () {
+      btn.textContent = '已複製 ✓'; btn.classList.add('done');
+      setTimeout(function () { btn.textContent = '複製全部'; btn.classList.remove('done'); }, 2200);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(src).then(done).catch(fallback);
+    } else fallback();
+    function fallback() {
+      var ta = document.createElement('textarea');
+      ta.value = src; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); done(); }
+      catch (e) { btn.textContent = '請手動選取'; }
+      ta.remove();
+    }
+  });
+
+  tog.addEventListener('click', function () {
+    box.classList.toggle('open');
+    tog.textContent = box.classList.contains('open') ? '收合 ▴' : '展開全部 ▾';
+  });
+})();
+</script>
+</body>
+</html>
