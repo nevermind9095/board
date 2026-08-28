@@ -42,6 +42,17 @@
   --sans:  "Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
   --mono:  "SFMono-Regular",Menlo,Consolas,monospace;
 
+  /* ---- 介面風格：預設「公文體」（方正、明體） ----
+     設定頁可以整套換成「親和體」，見下方 body.skin-soft。
+     --face 只給會被點、會被讀的介面元件用（分頁、按鈕、標籤）；
+     卷宗名、印章、獎狀這些「要有儀式感」的地方永遠留明體。 */
+  --face: var(--serif);
+  --r-xs: 1px;      /* 小標籤 */
+  --r-sm: 2px;      /* 一般框線、卡片、按鈕 */
+  --r-md: 3px;      /* 日期戳、對話框 */
+  --r-tab: 7px;     /* 分頁上緣 */
+  --face-ls: .1em;  /* 介面文字的字距 */
+
   --shadow-paper: 0 1px 2px rgba(0,0,0,.18), 0 8px 24px rgba(0,0,0,.28);
   --shadow-lift:  0 2px 4px rgba(0,0,0,.2), 0 14px 34px rgba(0,0,0,.34);
 }
@@ -93,20 +104,25 @@ header::after{
   opacity:.5;
 }
 
-.masthead{display:flex;align-items:baseline;gap:10px;min-width:0}
+/* 抬頭是頁首裡「可以被壓縮」的那一塊：
+   視窗變窄或放大時，先讓副標題縮短、再整條讓位，
+   絕對不能壓到右邊的日期戳跟分頁 */
+.masthead{display:flex;align-items:baseline;gap:10px;min-width:0;flex:0 1 auto;overflow:hidden}
 .masthead .org{
-  font-family:var(--serif);font-weight:900;font-size:1.32rem;letter-spacing:.14em;
+  font-family:var(--face);font-weight:900;font-size:1.32rem;letter-spacing:.14em;
   color:#f0e3c6;text-shadow:0 2px 0 rgba(0,0,0,.5);white-space:nowrap;
+  flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;
 }
 .masthead .org .mark{color:var(--gold-hi)}
 .masthead .sub{
-  font-family:var(--serif);font-size:.82rem;letter-spacing:.22em;color:#b9a887;white-space:nowrap;
+  font-family:var(--face);font-size:.82rem;letter-spacing:.22em;color:#b9a887;white-space:nowrap;
+  flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;
 }
 
 /* 日期導覽 —— 做成一枚日期戳 */
 .datestamp{
-  display:flex;align-items:stretch;
-  border:1.5px solid #8a7255;border-radius:3px;overflow:hidden;
+  display:flex;align-items:stretch;flex:0 0 auto;
+  border:1.5px solid #8a7255;border-radius:var(--r-md);overflow:hidden;
   background:rgba(0,0,0,.28);
 }
 .datestamp button{
@@ -123,18 +139,18 @@ header::after{
 }
 .datestamp .face:hover{background:rgba(255,255,255,.07)}
 .datestamp .ymd{font-family:var(--mono);font-size:1.02rem;font-weight:700;color:#fff;letter-spacing:.04em;line-height:1.15}
-.datestamp .dow{font-family:var(--serif);font-size:.7rem;color:#c0ad8b;letter-spacing:.2em}
+.datestamp .dow{font-family:var(--face);font-size:.7rem;color:#c0ad8b;letter-spacing:.2em}
 
 .spacer{flex:1}
 
 /* 分頁 —— 卷宗索引標籤 */
-.tabs{display:flex;align-items:flex-end;gap:3px;align-self:flex-end;height:100%}
+.tabs{display:flex;align-items:flex-end;gap:3px;align-self:flex-end;height:100%;flex:0 0 auto}
 .tab{
-  font-family:var(--serif);font-weight:700;font-size:.98rem;letter-spacing:.1em;
+  font-family:var(--face);font-weight:700;font-size:.98rem;letter-spacing:.1em;
   padding:8px 17px 9px;cursor:pointer;
   color:#c5b391;background:linear-gradient(180deg,#5a4835,#43352a);
   border:1px solid #241c16;border-bottom:0;
-  border-radius:7px 7px 0 0;
+  border-radius:var(--r-tab) var(--r-tab) 0 0;
   position:relative;top:1px;
   transition:all .16s;white-space:nowrap;
 }
@@ -148,8 +164,8 @@ header::after{
 /* 連線狀態章 */
 .linkchip{
   display:flex;align-items:center;gap:6px;
-  font-family:var(--serif);font-size:.78rem;letter-spacing:.1em;font-weight:700;
-  padding:5px 11px;border-radius:2px;cursor:pointer;
+  font-family:var(--face);font-size:.78rem;letter-spacing:.1em;font-weight:700;
+  padding:5px 11px;border-radius:var(--r-sm);cursor:pointer;
   border:1.5px solid;transition:filter .15s;
 }
 .linkchip:hover{filter:brightness(1.16)}
@@ -165,7 +181,7 @@ header::after{
 main{flex:1;min-height:0;padding:14px 16px 16px;display:flex}
 .view{
   flex:1;min-height:0;display:none;flex-direction:column;
-  border-radius:3px;
+  border-radius:var(--r-md);
   border:1px solid var(--paper-edge);
   box-shadow:var(--shadow-paper);
   position:relative;
@@ -198,7 +214,7 @@ main{flex:1;min-height:0;padding:14px 16px 16px;display:flex}
   content:'';position:absolute;left:0;right:0;bottom:-5px;height:1px;background:var(--ink);
 }
 .sheet-title{
-  font-family:var(--serif);font-weight:900;font-size:1.72rem;letter-spacing:.2em;color:var(--ink);
+  font-family:var(--face);font-weight:900;font-size:1.72rem;letter-spacing:.2em;color:var(--ink);
 }
 .sheet-meta{
   font-family:var(--mono);font-size:.82rem;color:var(--ink-soft);letter-spacing:.05em;
@@ -208,10 +224,10 @@ main{flex:1;min-height:0;padding:14px 16px 16px;display:flex}
 
 /* 按鈕 —— 公文用印風 */
 .btn{
-  font-family:var(--serif);font-weight:700;font-size:.92rem;letter-spacing:.1em;
+  font-family:var(--face);font-weight:700;font-size:.92rem;letter-spacing:.1em;
   padding:7px 15px;cursor:pointer;
   color:var(--ink);background:linear-gradient(180deg,#f2e9d3,#ddcfae);
-  border:1.5px solid var(--rule);border-radius:2px;
+  border:1.5px solid var(--rule);border-radius:var(--r-sm);
   box-shadow:0 2px 0 rgba(107,95,82,.35);
   transition:transform .1s,box-shadow .1s,filter .15s;
   display:inline-flex;align-items:center;gap:6px;
@@ -219,6 +235,15 @@ main{flex:1;min-height:0;padding:14px 16px 16px;display:flex}
 .btn:hover{filter:brightness(1.05)}
 .btn:active{transform:translateY(2px);box-shadow:none}
 .btn-seal{color:#fff;background:linear-gradient(180deg,#c4483c,#a12b21);border-color:var(--seal-deep);box-shadow:0 2px 0 #6e1811}
+/* 設定頁改過但還沒儲存 */
+.btn.unsaved{
+  background:linear-gradient(180deg,#d8862c,#b3621a);border-color:#8a4a12;box-shadow:0 2px 0 #6e3a0d;
+  animation:unsavedPulse 1.9s ease-in-out infinite;
+}
+@keyframes unsavedPulse{
+  0%,100%{box-shadow:0 2px 0 #6e3a0d,0 0 0 0 rgba(216,134,44,.55)}
+  50%    {box-shadow:0 2px 0 #6e3a0d,0 0 0 6px rgba(216,134,44,0)}
+}
 .btn-gov{color:#fff;background:linear-gradient(180deg,#2a6396,#1a4569);border-color:#123049;box-shadow:0 2px 0 #0d2337}
 .btn-ghost{background:transparent;border-style:dashed;color:var(--ink-soft);box-shadow:none}
 .btn-sm{padding:4px 10px;font-size:.82rem}
@@ -229,7 +254,7 @@ main{flex:1;min-height:0;padding:14px 16px 16px;display:flex}
   grid-template-rows:24px;grid-auto-rows:1fr;gap:7px;overflow:auto;padding-right:4px;
 }
 .cal-dow{
-  grid-row:1;text-align:center;font-family:var(--serif);font-weight:700;
+  grid-row:1;text-align:center;font-family:var(--face);font-weight:700;
   font-size:.9rem;letter-spacing:.28em;color:var(--ink-soft);
   border-bottom:1.5px solid var(--rule);padding-bottom:3px;
   align-self:end;
@@ -237,7 +262,7 @@ main{flex:1;min-height:0;padding:14px 16px 16px;display:flex}
 .cal-dow.wk{color:var(--seal)}
 .cal-cell{
   background:rgba(255,255,255,.34);
-  border:1px solid var(--rule);border-radius:2px;
+  border:1px solid var(--rule);border-radius:var(--r-sm);
   padding:6px 7px;cursor:pointer;position:relative;overflow:hidden;
   display:flex;flex-direction:column;gap:3px;
   transition:transform .12s,box-shadow .12s,background .12s;
@@ -249,14 +274,14 @@ main{flex:1;min-height:0;padding:14px 16px 16px;display:flex}
 .cal-cell.today{border:2px solid var(--seal);background:rgba(255,255,255,.62)}
 .cal-cell.today::after{
   content:'今日';position:absolute;top:4px;right:4px;
-  font-family:var(--serif);font-size:.62rem;letter-spacing:.14em;font-weight:700;
-  color:#fff;background:var(--seal);padding:1px 5px;border-radius:1px;
+  font-family:var(--face);font-size:.62rem;letter-spacing:.14em;font-weight:700;
+  color:#fff;background:var(--seal);padding:1px 5px;border-radius:var(--r-xs);
 }
 .cal-num{font-family:var(--mono);font-size:1.18rem;font-weight:700;color:var(--ink);line-height:1}
 .cal-cell.wk .cal-num{color:var(--seal-deep)}
 .cal-tag{
-  font-family:var(--serif);font-size:.72rem;font-weight:700;letter-spacing:.06em;
-  padding:1px 6px;border-radius:1px;border:1px solid;line-height:1.35;
+  font-family:var(--face);font-size:.72rem;font-weight:700;letter-spacing:.06em;
+  padding:1px 6px;border-radius:var(--r-xs);border:1px solid;line-height:1.35;
   align-self:flex-start;
 }
 .tag-clear{color:var(--seal-deep);border-color:var(--seal);background:var(--seal-wash)}
@@ -265,9 +290,9 @@ main{flex:1;min-height:0;padding:14px 16px 16px;display:flex}
 .cal-mini{font-family:var(--sans);font-size:.68rem;color:var(--ink-soft);letter-spacing:.02em}
 .cal-mini b{color:var(--seal-deep)}
 .streak{
-  font-family:var(--serif);font-weight:900;letter-spacing:.12em;font-size:.8rem;
+  font-family:var(--face);font-weight:900;letter-spacing:.12em;font-size:.8rem;
   color:#3a2c08;background:linear-gradient(180deg,var(--gold-hi),var(--gold));
-  border:1px solid #6d5518;border-radius:1px;padding:2px 9px;margin-left:4px;
+  border:1px solid #6d5518;border-radius:var(--r-xs);padding:2px 9px;margin-left:4px;
   box-shadow:0 0 8px rgba(224,194,104,.5);
 }
 /* 彩蛋：加班中 */
@@ -276,7 +301,7 @@ main{flex:1;min-height:0;padding:14px 16px 16px;display:flex}
   width:118px;height:118px;border-radius:50%;
   border:5px solid var(--seal);color:var(--seal);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  font-family:var(--serif);font-weight:900;letter-spacing:.14em;
+  font-family:var(--face);font-weight:900;letter-spacing:.14em;
   background:rgba(244,236,216,.9);cursor:pointer;
   transform:rotate(-12deg);box-shadow:inset 0 0 0 3px rgba(184,52,42,.45),0 6px 20px rgba(0,0,0,.4);
   animation:bigStamp .55s cubic-bezier(.2,1.5,.35,1);
@@ -287,7 +312,7 @@ main{flex:1;min-height:0;padding:14px 16px 16px;display:flex}
 /* =====================  今日派工單（投影）  ===================== */
 .brief{flex:1;min-height:0;display:flex;flex-direction:column;gap:12px}
 .brief-block{
-  border:1.5px solid var(--rule);border-radius:2px;
+  border:1.5px solid var(--rule);border-radius:var(--r-sm);
   background:rgba(255,255,255,.3);
   padding:10px 16px 12px;
   display:flex;flex-direction:column;min-height:0;
@@ -298,8 +323,8 @@ main{flex:1;min-height:0;padding:14px 16px 16px;display:flex}
 .brief-block .edit-hint{
   position:absolute;top:7px;left:50%;transform:translateX(-50%);
   opacity:0;transition:opacity .16s;
-  font-family:var(--serif);font-size:.78rem;letter-spacing:.1em;color:var(--ink-soft);
-  border:1px dashed var(--rule);padding:2px 8px;border-radius:2px;background:rgba(255,255,255,.7);
+  font-family:var(--face);font-size:.78rem;letter-spacing:.1em;color:var(--ink-soft);
+  border:1px dashed var(--rule);padding:2px 8px;border-radius:var(--r-sm);background:rgba(255,255,255,.7);
 }
 .brief-block:hover .edit-hint{opacity:1}
 .block-new{flex:2.1}
@@ -310,14 +335,14 @@ main{flex:1;min-height:0;padding:14px 16px 16px;display:flex}
   padding-bottom:5px;margin-bottom:8px;border-bottom:2px solid;
 }
 .block-head .cap{
-  font-family:var(--serif);font-weight:900;letter-spacing:.22em;font-size:1.44rem;
+  font-family:var(--face);font-weight:900;letter-spacing:.22em;font-size:1.44rem;
 }
 .block-head .num{
   font-family:var(--mono);font-size:.82rem;letter-spacing:.06em;color:var(--ink-soft);
 }
 .block-head .count{
-  margin-left:auto;font-family:var(--serif);font-size:.92rem;letter-spacing:.1em;
-  padding:2px 10px;border:1px solid;border-radius:2px;font-weight:700;
+  margin-left:auto;font-family:var(--face);font-size:.92rem;letter-spacing:.1em;
+  padding:2px 10px;border:1px solid;border-radius:var(--r-sm);font-weight:700;
 }
 .block-new .block-head{border-color:var(--gov)}
 .block-new .cap{color:var(--gov)}
@@ -335,22 +360,22 @@ main{flex:1;min-height:0;padding:14px 16px 16px;display:flex}
 }
 .item .bullet{
   flex:0 0 auto;font-family:var(--mono);font-weight:700;
-  border:1.5px solid;border-radius:2px;text-align:center;
+  border:1.5px solid;border-radius:var(--r-sm);text-align:center;
   padding:0 4px;min-width:1.9em;
 }
-.block-new .item{font-family:var(--serif);font-size:2.02em;font-weight:700;color:var(--ink)}
+.block-new .item{font-family:var(--face);font-size:2.02em;font-weight:700;color:var(--ink)}
 .block-new .item .bullet{color:var(--gov);border-color:var(--gov);font-size:.56em;margin-top:.38em}
 .block-new .item.flag{color:var(--seal-deep)}
 .block-new .item.flag .bullet{color:#fff;background:var(--seal);border-color:var(--seal-deep)}
-.block-fix .item{font-family:var(--serif);font-size:1.58em;font-weight:700;color:var(--seal-deep)}
+.block-fix .item{font-family:var(--face);font-size:1.58em;font-weight:700;color:var(--seal-deep)}
 .block-fix .item .bullet{color:var(--seal);border-color:var(--seal);font-size:.62em;margin-top:.34em}
 .item .carry{
   font-family:var(--sans);font-size:.6em;font-weight:700;letter-spacing:.1em;
-  color:#fff;background:var(--seal);padding:1px 6px;border-radius:2px;
+  color:#fff;background:var(--seal);padding:1px 6px;border-radius:var(--r-sm);
   margin-left:8px;vertical-align:middle;white-space:nowrap;
 }
 .empty-line{
-  font-family:var(--serif);font-size:1.16rem;color:var(--ink-faint);
+  font-family:var(--face);font-size:1.16rem;color:var(--ink-faint);
   letter-spacing:.16em;padding:14px 0;font-style:italic;
 }
 
@@ -359,15 +384,15 @@ main{flex:1;min-height:0;padding:14px 16px 16px;display:flex}
   flex:0 0 auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
   border:1px solid var(--rule);border-left:5px solid var(--seal);
   background:rgba(255,255,255,.4);
-  padding:7px 14px;border-radius:2px;
+  padding:7px 14px;border-radius:var(--r-sm);
 }
 .carryover .cap{
-  font-family:var(--serif);font-weight:900;letter-spacing:.16em;font-size:.98rem;
+  font-family:var(--face);font-weight:900;letter-spacing:.16em;font-size:.98rem;
   color:var(--seal-deep);white-space:nowrap;
   border-right:1px solid var(--rule);padding-right:12px;
 }
 .carryover .grp{display:flex;align-items:baseline;gap:7px;font-size:.95rem}
-.carryover .k{font-family:var(--serif);font-weight:700;color:var(--ink)}
+.carryover .k{font-family:var(--face);font-weight:700;color:var(--ink)}
 .carryover .who{font-family:var(--sans);color:var(--seal-deep);font-weight:500;font-size:.9rem}
 .carryover .sep{color:var(--ink-faint);font-size:.85rem}
 .carryover .btn{margin-left:auto}
@@ -381,7 +406,7 @@ main{flex:1;min-height:0;padding:14px 16px 16px;display:flex}
 /* 卷宗夾 */
 .folder{
   background:linear-gradient(178deg,rgba(255,255,255,.5),rgba(255,255,255,.28));
-  border:1.5px solid var(--rule);border-radius:2px 2px 3px 3px;
+  border:1.5px solid var(--rule);border-radius:var(--r-sm) var(--r-sm) var(--r-md) var(--r-md);
   display:flex;flex-direction:column;height:fit-content;
   box-shadow:0 2px 5px rgba(0,0,0,.14);
   position:relative;transition:box-shadow .15s,border-color .15s;
@@ -397,7 +422,7 @@ main{flex:1;min-height:0;padding:14px 16px 16px;display:flex}
 }
 .folder-tab:hover{filter:brightness(1.18)}
 .folder.clear .folder-tab{background:linear-gradient(180deg,#7d6425,#57441a)}
-.folder-tab .fname{font-family:var(--serif);font-weight:900;font-size:1.1rem;letter-spacing:.14em}
+.folder-tab .fname{font-family:var(--face);font-weight:900;font-size:1.1rem;letter-spacing:.14em}
 .folder-tab .fcode{font-family:var(--mono);font-size:.7rem;color:#bfae8a;letter-spacing:.06em}
 .folder-tab .fstat{
   margin-left:auto;font-family:var(--mono);font-size:.76rem;color:#cbb994;letter-spacing:.04em;
@@ -406,7 +431,7 @@ main{flex:1;min-height:0;padding:14px 16px 16px;display:flex}
   margin-left:auto;display:none;align-items:center;gap:5px;
   font-family:var(--serif);font-weight:900;font-size:.78rem;letter-spacing:.14em;
   color:#3a2c08;background:linear-gradient(180deg,var(--gold-hi),var(--gold));
-  padding:2px 9px;border-radius:1px;border:1px solid #6d5518;
+  padding:2px 9px;border-radius:var(--r-xs);border:1px solid #6d5518;
   box-shadow:0 0 9px rgba(224,194,104,.55);
 }
 .folder.clear .pennant{display:flex;animation:pennantIn .45s cubic-bezier(.2,1.5,.4,1)}
@@ -423,10 +448,10 @@ main{flex:1;min-height:0;padding:14px 16px 16px;display:flex}
 .rrow.dragging{opacity:.35}
 .rrow .seat{
   font-family:var(--mono);font-size:.82rem;font-weight:700;color:#fff;
-  background:var(--ink-soft);border-radius:2px;padding:1px 5px;min-width:26px;text-align:center;
+  background:var(--ink-soft);border-radius:var(--r-sm);padding:1px 5px;min-width:26px;text-align:center;
 }
 .rrow .who{
-  font-family:var(--serif);font-weight:700;font-size:1.12rem;color:var(--ink);
+  font-family:var(--face);font-weight:700;font-size:1.12rem;color:var(--ink);
   width:5.2em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 0 auto;
 }
 .rrow.watched .who{color:var(--seal-deep)}
@@ -436,7 +461,7 @@ main{flex:1;min-height:0;padding:14px 16px 16px;display:flex}
 /* 章格 */
 .cell{
   flex:1;min-width:0;height:32px;position:relative;cursor:pointer;
-  border:1.5px dashed var(--rule);border-radius:2px;
+  border:1.5px dashed var(--rule);border-radius:var(--r-sm);
   background:rgba(255,255,255,.42);
   display:flex;align-items:center;justify-content:center;
   transition:background .14s,border-color .14s;
@@ -451,7 +476,7 @@ main{flex:1;min-height:0;padding:14px 16px 16px;display:flex}
 .cell.done .lbl{display:none}
 .cell .stamp{
   display:none;font-family:var(--serif);font-weight:900;font-size:1.02rem;letter-spacing:.14em;
-  color:var(--seal);border:2.5px solid var(--seal);border-radius:2px;
+  color:var(--seal);border:2.5px solid var(--seal);border-radius:var(--r-sm);
   padding:0 6px;line-height:1.28;
   transform:rotate(-7deg);
   text-shadow:0 0 1px rgba(184,52,42,.5);
@@ -466,7 +491,7 @@ main{flex:1;min-height:0;padding:14px 16px 16px;display:flex}
   100%{transform:scale(1) rotate(-7deg);opacity:.9}
 }
 .cells .none{
-  font-family:var(--serif);font-size:.82rem;color:var(--ink-faint);
+  font-family:var(--face);font-size:.82rem;color:var(--ink-faint);
   letter-spacing:.12em;font-style:italic;padding-left:4px;
 }
 
@@ -480,7 +505,7 @@ main{flex:1;min-height:0;padding:14px 16px 16px;display:flex}
 .folder-flag .folder-tab:hover{filter:none}
 .flag-list{padding:7px;display:grid;grid-template-columns:repeat(2,1fr);gap:5px;max-height:274px;overflow:auto}
 .flag-card{
-  background:#fff;border:1px solid #dfa9a2;border-radius:2px;
+  background:#fff;border:1px solid #dfa9a2;border-radius:var(--r-sm);
   display:flex;align-items:stretch;overflow:hidden;cursor:pointer;
   transition:box-shadow .13s,transform .13s;min-height:34px;
 }
@@ -492,7 +517,7 @@ main{flex:1;min-height:0;padding:14px 16px 16px;display:flex}
 .flag-card.day  .kind{background:var(--gold)}
 .flag-body{flex:1;min-width:0;padding:3px 7px;display:flex;flex-direction:column;justify-content:center}
 .flag-name{
-  font-family:var(--serif);font-weight:700;font-size:.94rem;color:var(--seal-deep);
+  font-family:var(--face);font-weight:700;font-size:.94rem;color:var(--seal-deep);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .flag-sub{font-family:var(--sans);font-size:.68rem;color:#a3766f;letter-spacing:.02em}
@@ -506,22 +531,22 @@ main{flex:1;min-height:0;padding:14px 16px 16px;display:flex}
 }
 .flag-add select,.flag-add input{
   font-family:var(--sans);font-size:.85rem;padding:5px 7px;
-  border:1px solid #dfa9a2;border-radius:2px;background:#fff;color:var(--ink);min-width:0;
+  border:1px solid #dfa9a2;border-radius:var(--r-sm);background:#fff;color:var(--ink);min-width:0;
 }
 .flag-add select{flex:1}
-.flag-add .seg{display:flex;border:1px solid #dfa9a2;border-radius:2px;overflow:hidden}
+.flag-add .seg{display:flex;border:1px solid #dfa9a2;border-radius:var(--r-sm);overflow:hidden}
 .flag-add .seg button{
   background:#fff;border:0;padding:5px 8px;cursor:pointer;
-  font-family:var(--serif);font-size:.78rem;letter-spacing:.08em;color:#a3766f;
+  font-family:var(--face);font-size:.78rem;letter-spacing:.08em;color:#a3766f;
 }
 .flag-add .seg button.on{background:var(--seal);color:#fff;font-weight:700}
-.flag-empty{grid-column:1/-1;text-align:center;color:#b99a95;font-family:var(--serif);
+.flag-empty{grid-column:1/-1;text-align:center;color:#b99a95;font-family:var(--face);
   font-style:italic;letter-spacing:.14em;padding:16px 0;font-size:.94rem}
 
 /* =====================  設定  ===================== */
 .setup{flex:1;min-height:0;overflow:auto;padding-right:6px;display:flex;flex-direction:column;gap:14px}
 .fieldset{
-  border:1.5px solid var(--rule);border-radius:2px;background:rgba(255,255,255,.3);
+  border:1.5px solid var(--rule);border-radius:var(--r-sm);background:rgba(255,255,255,.3);
   padding:0 0 12px;
 }
 .fieldset > .fs-head{
@@ -531,28 +556,28 @@ main{flex:1;min-height:0;padding:14px 16px 16px;display:flex}
 }
 .fs-head .fs-no{
   font-family:var(--mono);font-size:.76rem;font-weight:700;color:#fff;
-  background:var(--ink-soft);padding:1px 6px;border-radius:2px;
+  background:var(--ink-soft);padding:1px 6px;border-radius:var(--r-sm);
 }
-.fs-head .fs-t{font-family:var(--serif);font-weight:900;font-size:1.06rem;letter-spacing:.16em;color:var(--ink)}
+.fs-head .fs-t{font-family:var(--face);font-weight:900;font-size:1.06rem;letter-spacing:.16em;color:var(--ink)}
 .fs-head .fs-d{font-family:var(--sans);font-size:.78rem;color:var(--ink-soft)}
 .fs-body{padding:0 13px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
 .field{display:flex;flex-direction:column;gap:5px}
 .field > label{
-  font-family:var(--serif);font-weight:700;font-size:.9rem;letter-spacing:.1em;color:var(--ink);
+  font-family:var(--face);font-weight:700;font-size:.9rem;letter-spacing:.1em;color:var(--ink);
   display:flex;align-items:center;gap:7px;
 }
 .field .hint{font-family:var(--sans);font-size:.74rem;color:var(--ink-soft);font-weight:400;letter-spacing:0}
 select{
   font-family:var(--sans);font-size:.95rem;color:var(--ink);
-  background:rgba(255,255,255,.82);border:1.5px solid var(--rule);border-radius:2px;
+  background:rgba(255,255,255,.82);border:1.5px solid var(--rule);border-radius:var(--r-sm);
   padding:8px 10px;width:100%;cursor:pointer;
 }
 select:focus{outline:0;border-color:var(--gov);background:#fff}
 textarea,input[type=text]{
   font-family:var(--sans);font-size:.95rem;color:var(--ink);
-  background:rgba(255,255,255,.82);border:1.5px solid var(--rule);border-radius:2px;
+  background:rgba(255,255,255,.82);border:1.5px solid var(--rule);border-radius:var(--r-sm);
   padding:8px 10px;width:100%;resize:vertical;line-height:1.6;
 }
 textarea:focus,input[type=text]:focus{outline:0;border-color:var(--gov);background:#fff}
@@ -561,7 +586,7 @@ textarea{min-height:132px}
 
 /* 家長代碼清單 */
 .switch{display:flex;align-items:center;gap:7px;cursor:pointer;
-  font-family:var(--serif);font-weight:700;font-size:.95rem;letter-spacing:.08em;color:var(--ink)}
+  font-family:var(--face);font-weight:700;font-size:.95rem;letter-spacing:.08em;color:var(--ink)}
 .switch input{width:17px;height:17px;accent-color:var(--seal);cursor:pointer}
 .codes{
   display:grid;grid-template-columns:repeat(auto-fill,minmax(226px,1fr));gap:6px;
@@ -569,18 +594,18 @@ textarea{min-height:132px}
 }
 .code-card{
   display:flex;align-items:center;gap:8px;padding:5px 9px;
-  background:rgba(255,255,255,.62);border:1px solid var(--rule);border-radius:2px;
+  background:rgba(255,255,255,.62);border:1px solid var(--rule);border-radius:var(--r-sm);
   font-size:.88rem;
 }
 .code-card .cs{font-family:var(--mono);font-size:.76rem;font-weight:700;color:#fff;
-  background:var(--ink-soft);border-radius:2px;padding:1px 5px;min-width:25px;text-align:center}
-.code-card .cn{font-family:var(--serif);font-weight:700;color:var(--ink);flex:1;
+  background:var(--ink-soft);border-radius:var(--r-sm);padding:1px 5px;min-width:25px;text-align:center}
+.code-card .cn{font-family:var(--face);font-weight:700;color:var(--ink);flex:1;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .code-card .cc{font-family:var(--mono);font-weight:700;color:var(--seal-deep);letter-spacing:.08em}
-.code-card .cb{background:transparent;border:1px solid var(--rule);border-radius:2px;
+.code-card .cb{background:transparent;border:1px solid var(--rule);border-radius:var(--r-sm);
   cursor:pointer;font-size:.74rem;padding:2px 6px;color:var(--ink-soft);font-family:var(--sans)}
 .code-card .cb:hover{background:var(--gov);color:#fff;border-color:var(--gov)}
-.codes-empty{grid-column:1/-1;font-family:var(--serif);font-style:italic;
+.codes-empty{grid-column:1/-1;font-family:var(--face);font-style:italic;
   color:var(--ink-faint);letter-spacing:.1em;padding:12px 0}
 
 /* =====================  QR 家長通知單（列印）  ===================== */
@@ -596,7 +621,7 @@ textarea{min-height:132px}
   box-shadow:0 5px 16px rgba(0,0,0,.5);
   padding:11px 20px;
 }
-.ps-bar .ps-t{font-family:var(--serif);font-weight:900;font-size:1.12rem;
+.ps-bar .ps-t{font-family:var(--face);font-weight:900;font-size:1.12rem;
   letter-spacing:.18em;color:#f0e3c6}
 .ps-bar .ps-d{font-size:.84rem;color:#c0ad8b}
 .ps-bar .ps-sp{flex:1}
@@ -629,7 +654,7 @@ textarea{min-height:132px}
 .slip .s-name{font-family:var(--serif);font-weight:900;font-size:15pt;letter-spacing:.06em;color:#000}
 .slip .s-seat{
   font-family:var(--mono);font-size:8pt;font-weight:700;color:#fff;background:#555;
-  border-radius:2px;padding:0.5mm 2mm;margin-right:2mm;vertical-align:2px;
+  border-radius:var(--r-sm);padding:0.5mm 2mm;margin-right:2mm;vertical-align:2px;
 }
 .slip .s-code{font-family:var(--mono);font-size:9pt;color:#666;margin-top:1.5mm;letter-spacing:.1em}
 .slip .s-how{font-size:8.5pt;color:#333;line-height:1.65;margin-top:2mm}
@@ -665,7 +690,7 @@ textarea{min-height:132px}
 @keyframes fade{from{opacity:0}to{opacity:1}}
 .dialog{
   width:600px;max-width:100%;max-height:88vh;
-  border:1px solid var(--paper-edge);border-radius:2px;
+  border:1px solid var(--paper-edge);border-radius:var(--r-sm);
   box-shadow:0 22px 60px rgba(0,0,0,.62);
   display:flex;flex-direction:column;
   animation:dlgIn .24s cubic-bezier(.22,1.1,.34,1);
@@ -675,7 +700,7 @@ textarea{min-height:132px}
   flex:0 0 auto;padding:13px 18px 9px;border-bottom:2.5px solid var(--ink);
   display:flex;align-items:baseline;gap:12px;
 }
-.dlg-head .t{font-family:var(--serif);font-weight:900;font-size:1.24rem;letter-spacing:.16em;color:var(--ink)}
+.dlg-head .t{font-family:var(--face);font-weight:900;font-size:1.24rem;letter-spacing:.16em;color:var(--ink)}
 .dlg-head .n{font-family:var(--mono);font-size:.76rem;color:var(--ink-soft);margin-left:auto}
 .dlg-body{flex:1;min-height:0;overflow:auto;padding:15px 18px}
 .dlg-foot{
@@ -688,20 +713,20 @@ textarea{min-height:132px}
 .docket{display:flex;flex-direction:column;gap:6px}
 .docket-item{
   display:flex;align-items:center;gap:11px;padding:9px 12px;cursor:pointer;
-  background:rgba(255,255,255,.6);border:1.5px solid var(--rule);border-radius:2px;
+  background:rgba(255,255,255,.6);border:1.5px solid var(--rule);border-radius:var(--r-sm);
   transition:background .14s,border-color .14s;
 }
 .docket-item:hover{background:#fff;border-color:var(--ink-soft)}
 .docket-item .box{
-  flex:0 0 auto;width:23px;height:23px;border:2px solid var(--ink-soft);border-radius:2px;
+  flex:0 0 auto;width:23px;height:23px;border:2px solid var(--ink-soft);border-radius:var(--r-sm);
   display:flex;align-items:center;justify-content:center;
-  font-family:var(--serif);font-weight:900;color:var(--seal);font-size:1.06rem;
+  font-family:var(--face);font-weight:900;color:var(--seal);font-size:1.06rem;
 }
-.docket-item .txt{flex:1;font-family:var(--serif);font-size:1.04rem;color:var(--ink)}
+.docket-item .txt{flex:1;font-family:var(--face);font-size:1.04rem;color:var(--ink)}
 .docket-item.ok{background:var(--seal-wash);border-color:rgba(184,52,42,.4)}
 .docket-item.ok .box{border-color:var(--seal)}
 .docket-item.ok .txt{color:var(--seal-deep);text-decoration:line-through;text-decoration-color:rgba(184,52,42,.45)}
-.docket-empty{font-family:var(--serif);font-style:italic;color:var(--ink-faint);
+.docket-empty{font-family:var(--face);font-style:italic;color:var(--ink-faint);
   letter-spacing:.12em;text-align:center;padding:22px 0}
 
 /* =====================  結案大印（慶祝）  ===================== */
@@ -713,7 +738,7 @@ textarea{min-height:132px}
 }
 .finale.on{display:flex}
 .finale-paper{
-  position:relative;padding:50px 190px 62px 96px;text-align:center;
+  position:relative;z-index:2;padding:50px 190px 62px 96px;text-align:center;
   border:1px solid var(--paper-edge);
   box-shadow:0 30px 90px rgba(0,0,0,.8);
   animation:paperUp .5s cubic-bezier(.2,1.05,.32,1);
@@ -764,8 +789,8 @@ textarea{min-height:132px}
 #note{
   position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(12px);
   background:rgba(28,21,16,.94);color:#f2e6c9;
-  font-family:var(--serif);font-size:.98rem;letter-spacing:.1em;
-  padding:11px 22px;border-radius:2px;border-left:4px solid var(--gold);
+  font-family:var(--face);font-size:.98rem;letter-spacing:.1em;
+  padding:11px 22px;border-radius:var(--r-sm);border-left:4px solid var(--gold);
   box-shadow:0 8px 26px rgba(0,0,0,.5);z-index:950;
   opacity:0;pointer-events:none;transition:opacity .22s,transform .22s;
 }
@@ -783,6 +808,17 @@ textarea{min-height:132px}
   .board{grid-template-columns:1fr}
   .grid3,.grid2{grid-template-columns:1fr}
 }
+/* 放大頁面（Ctrl + 滾輪）或小螢幕時，副標題先收起來，
+   把空間讓給日期戳的前後箭頭 */
+@media (max-width:1240px){ .masthead .sub{display:none} }
+@media (max-width:980px){
+  .masthead .org{font-size:1.06rem;letter-spacing:.04em}
+  .datestamp .face{min-width:126px}
+  .datestamp .ymd{font-size:.94rem}
+  .tab{padding:8px 12px 9px;font-size:.9rem;letter-spacing:.04em}
+  header{gap:9px;padding:0 9px}
+}
+
 @media (max-width:720px){
   body{height:auto;min-height:100vh;overflow:auto}
   header{height:auto;flex-wrap:wrap;padding:8px 12px;gap:10px}
@@ -799,6 +835,73 @@ textarea{min-height:132px}
   .bigseal{width:96px;height:96px;right:50%;transform:translateX(50%) rotate(-12deg);bottom:12px}
   .bigseal .s1{font-size:1.06rem}
 }
+
+/* =====================  彩帶  ===================== */
+.confetti{
+  position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1;
+}
+.confetti i{
+  position:absolute;top:-24px;display:block;
+  will-change:transform,opacity;
+  animation:cfFall linear forwards;
+}
+@keyframes cfFall{
+  0%   {transform:translate3d(0,-24px,0) rotate(0deg);opacity:0}
+  8%   {opacity:1}
+  80%  {opacity:1}
+  100% {transform:translate3d(var(--dx),102vh,0) rotate(var(--rot));opacity:0}
+}
+@media (prefers-reduced-motion:reduce){
+  .confetti{display:none}
+}
+
+/* =====================================================================
+   介面風格：親和體
+   ---------------------------------------------------------------------
+   卷宗的身分是靠「紙、朱砂印、裝訂孔、用詞」撐起來的，不是靠直角。
+   這一套只放寬圓角、把會被點會被讀的地方換成黑體，
+   印章、獎狀、錦旗、列印的通知單一律維持明體，儀式感不動。
+   ===================================================================== */
+body.skin-soft{
+  --face: var(--sans);
+  --r-xs: 5px;
+  --r-sm: 9px;
+  --r-md: 11px;
+  --r-tab: 13px;
+  --face-ls: .04em;
+}
+body.skin-soft .tab,
+body.skin-soft .btn,
+body.skin-soft .linkchip,
+body.skin-soft .field > label,
+body.skin-soft .block-head .cap,
+body.skin-soft .carryover .cap,
+body.skin-soft .overtime,
+body.skin-soft .fs-head .fs-t,
+body.skin-soft .masthead .org,
+body.skin-soft .masthead .sub{ letter-spacing:var(--face-ls) }
+
+body.skin-soft .tab{font-weight:500;padding:8px 19px 9px}
+body.skin-soft .tab.on{font-weight:700;padding-bottom:12px}
+body.skin-soft .btn{font-weight:500;padding:8px 16px}
+body.skin-soft .masthead .org{font-weight:700}
+body.skin-soft .datestamp{border-width:1.5px}
+body.skin-soft .view{border-radius:14px}
+body.skin-soft .folder{border-radius:var(--r-sm)}
+body.skin-soft .folder-tab{border-radius:var(--r-sm) var(--r-sm) 0 0}
+body.skin-soft .cell{border-radius:var(--r-sm)}
+body.skin-soft .cal-cell{border-radius:var(--r-sm)}
+body.skin-soft .flag-card{border-radius:var(--r-sm)}
+body.skin-soft textarea,
+body.skin-soft input[type=text],
+body.skin-soft select{font-weight:400;letter-spacing:.02em}
+/* 投影出來的項目改黑體，筆畫比明體粗、遠看清楚 */
+body.skin-soft .block-new .item,
+body.skin-soft .block-fix .item{font-weight:500}
+body.skin-soft .rrow .who{font-weight:500}
+body.skin-soft .dialog{border-radius:var(--r-md)}
+body.skin-soft .docket-item{border-radius:var(--r-sm)}
+body.skin-soft #note{border-radius:var(--r-sm)}
 </style>
 </head>
 <body class="">
@@ -952,6 +1055,30 @@ textarea{min-height:132px}
               <code>LEX_SETS</code> 區塊可以逐字改。
             </div>
           </div>
+
+          <div class="field" style="margin-top:14px">
+            <label>介面風格
+              <span class="hint">只改外觀，用詞、資料、功能完全一樣</span>
+            </label>
+            <select id="in-skin">
+              <option value="doc">公文體　│　直角、明體　│　像一份正式卷宗</option>
+              <option value="soft">親和體　│　圓角、黑體　│　字比較好讀，適合中低年級</option>
+            </select>
+            <div class="dlg-note">
+              兩種都保留朱砂印章、紙張紋理和獎狀，只差在圓角跟字體。
+              投影給低年級看、或覺得明體筆畫太細的話，選<b>親和體</b>會清楚很多。
+            </div>
+          </div>
+
+          <div class="field" style="margin-top:14px">
+            <label>慶祝方式
+              <span class="hint">全班完成、名單清空時的演出</span>
+            </label>
+            <select id="in-party">
+              <option value="full">熱鬧版　│　彩帶＋歡樂音效</option>
+              <option value="calm">莊重版　│　只有蓋印音效，不灑彩帶</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -1090,6 +1217,7 @@ textarea{min-height:132px}
 
 <!-- ============ 結案大印 ============ -->
 <div class="finale" id="finale">
+  <div class="confetti" id="confetti" aria-hidden="true"></div>
   <div class="finale-paper paper" id="finale-paper">
     <div class="finale-x" id="finale-x">×</div>
     <div class="finale-org" id="finale-org">　</div>
@@ -1656,7 +1784,16 @@ function esc(t) { return String(t == null ? "" : t); }
 const Snd = {
   ctx: null, on: true,
   boot() {
-    if (this.ctx) { if (this.ctx.state === "suspended") this.ctx.resume(); return; }
+    if (this.ctx) {
+      /* 有些瀏覽器要等使用者互動過才肯發聲；resume 失敗不必吵 */
+      try {
+        if (this.ctx.state === "suspended" && this.ctx.resume) {
+          const r = this.ctx.resume();
+          if (r && r.catch) r.catch(() => {});
+        }
+      } catch (e) {}
+      return;
+    }
     const AC = window.AudioContext || window.webkitAudioContext;
     if (AC) this.ctx = new AC();
   },
@@ -1681,11 +1818,70 @@ const Snd = {
     o.connect(g); g.connect(c.destination);
     o.start(t0); o.stop(t0 + dur + 0.02);
   },
+  /* 小號：鋸齒波過低通，起音亮、尾音收得乾淨 */
+  horn(freq, t0, dur, gain) {
+    const c = this.ctx, o = c.createOscillator(), g = c.createGain(), f = c.createBiquadFilter();
+    o.type = "sawtooth"; o.frequency.setValueAtTime(freq, t0);
+    f.type = "lowpass"; f.Q.value = 0.7;
+    f.frequency.setValueAtTime(freq * 1.8, t0);
+    f.frequency.exponentialRampToValueAtTime(freq * 5.5, t0 + 0.05);
+    f.frequency.exponentialRampToValueAtTime(freq * 2.4, t0 + dur);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(gain, t0 + 0.028);
+    g.gain.setValueAtTime(gain, t0 + dur * 0.62);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(f); f.connect(g); g.connect(c.destination);
+    o.start(t0); o.stop(t0 + dur + 0.02);
+  },
+  /* 鐘琴：基音加兩個非整數泛音，敲起來亮亮的 */
+  chime(freq, t0, dur, gain) {
+    [[1, 1], [2.76, 0.34], [5.4, 0.13]].forEach(([m, a]) => {
+      const c = this.ctx, o = c.createOscillator(), g = c.createGain();
+      o.type = "sine"; o.frequency.setValueAtTime(freq * m, t0);
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(gain * a, t0 + 0.006);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur * (m > 3 ? 0.5 : 1));
+      o.connect(g); g.connect(c.destination);
+      o.start(t0); o.stop(t0 + dur + 0.02);
+    });
+  },
+  /* 碎星：一串高音亂數小鈴，撒下來的感覺 */
+  sparkle(t0, n, span, gain) {
+    const scale = [1046.5, 1174.7, 1318.5, 1568, 1760, 2093, 2349, 2637];
+    for (let i = 0; i < n; i++) {
+      const f = scale[Math.floor(Math.random() * scale.length)];
+      this.chime(f, t0 + Math.random() * span, 0.34, gain * (0.55 + Math.random() * 0.45));
+    }
+  },
+
   play(kind) {
     if (!this.on) return;
     this.boot();
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
+    /* ---- 熱鬧版的兩段慶祝：全清、零逾期 ---- */
+    if ((kind === "close" || kind === "gold") && partyOn()) {
+      this.noise(0.10, 1400, 0.9, 0.18, t);          /* 定音鼓一下 */
+      this.tone(92, t, 0.22, 0.24, "sine");
+      this.tone(46, t, 0.30, 0.16, "sine");
+      /* 小號上行：G G ─ C E G C */
+      [[392, 0.14, 0.10], [392, 0.26, 0.10], [523.25, 0.38, 0.16],
+       [659.25, 0.56, 0.14], [783.99, 0.70, 0.14], [1046.5, 0.84, 0.62]]
+        .forEach(([f, d, len]) => this.horn(f, t + d, len, 0.108));
+      /* 收尾和弦鋪底 */
+      [261.63, 329.63, 392, 523.25].forEach(f => this.horn(f, t + 0.84, 0.85, 0.056));
+      /* 鐘琴亮音 + 碎星 */
+      this.chime(1046.5, t + 0.86, 1.5, 0.125);
+      this.chime(1568, t + 0.90, 1.2, 0.068);
+      this.sparkle(t + 0.88, kind === "gold" ? 14 : 9, kind === "gold" ? 1.1 : 0.8, 0.062);
+      if (kind === "gold") {                          /* 零逾期再往上加一層 */
+        this.horn(1318.5, t + 1.30, 0.30, 0.088);
+        this.horn(1568,   t + 1.52, 0.75, 0.10);
+        this.chime(2093, t + 1.54, 1.6, 0.075);
+        this.sparkle(t + 1.55, 10, 1.0, 0.056);
+      }
+      return;
+    }
     if (kind === "stamp") {                    // 蓋章：木頭撞擊 + 低頻
       this.noise(0.075, 1750, 1.1, 0.16, t);
       this.tone(112, t, 0.10, 0.22, "sine");
@@ -1739,7 +1935,7 @@ function blankDB() {
     students: { list: [], ts: now() },
     days:     {},
     flags:    {},
-    prefs:    { briefZoom: 1, muted: false, lex: "corp", parent: false, sync: "auto" },
+    prefs:    { briefZoom: 1, muted: false, lex: "corp", parent: false, sync: "auto", skin: "doc", party: "full" },
     endpoint: ""
   };
 }
@@ -1804,7 +2000,7 @@ function loadLocal() {
     DB.students = Object.assign({ list: [], ts: 0 }, DB.students);
     DB.days     = DB.days || {};
     DB.flags    = DB.flags || {};
-    DB.prefs    = Object.assign({ briefZoom: 1, muted: false, lex: "corp", parent: false, sync: "auto" }, DB.prefs);
+    DB.prefs    = Object.assign({ briefZoom: 1, muted: false, lex: "corp", parent: false, sync: "auto", skin: "doc", party: "full" }, DB.prefs);
     return true;
   } catch (e) {
     /* 絕不自動清空資料 —— 保留原始字串供人工救援 */
@@ -1838,9 +2034,13 @@ const Remote = {
   },
 
   get uiBusy() {
-    /* 對話框或通知單開著時，不要在背景把資料換掉 */
-    return $("#veil").classList.contains("on") ||
-           !$("#printsheet").classList.contains("hide");
+    /* 對話框、通知單開著，或老師正在打字時，絕對不要在背景把資料換掉 */
+    if ($("#veil").classList.contains("on")) return true;
+    if (!$("#printsheet").classList.contains("hide")) return true;
+    if (setupDirty) return true;
+    const a = document.activeElement;
+    if (a && a.matches && a.matches("input,textarea")) return true;
+    return false;
   },
 
   async pull(force) {
@@ -2023,6 +2223,7 @@ let cur = today();            /* 目前檢視的日期 */
 let calMonth = new Date();    /* 月報顯示的月份 */
 let view = "view-month";
 let freshCells = {};          /* 剛蓋章的格子，用來播放動畫 */
+let setupDirty = false;       /* 設定頁有改過、但還沒按「儲存設定」 */
 
 /* ================================================================
    結案計算
@@ -2782,9 +2983,52 @@ function finale(o) {
   seal.style.borderColor = o.gold ? "var(--gold)" : "var(--seal)";
   seal.style.color = o.gold ? "var(--gold)" : "var(--seal)";
   $("#finale").classList.add("on");
+  dropConfetti(o.gold);
   Snd.play(o.snd);
 }
-function closeFinale() { $("#finale").classList.remove("on"); }
+function closeFinale() { $("#finale").classList.remove("on"); clearConfetti(); }
+
+/* ---------------------------------------------------------------- 彩帶
+   純 CSS 動畫，跑完自己清掉；「莊重版」或系統設定要求減少動態時不放 */
+const CONFETTI_DOC  = ["#b8342a", "#a8842c", "#1d4e7a", "#e0c268", "#6b5f52", "#f4ecd8"];
+const CONFETTI_GOLD = ["#e0c268", "#a8842c", "#f6e3a8", "#b8342a", "#fff6d8"];
+let confettiTimer = null;
+
+function clearConfetti() {
+  clearTimeout(confettiTimer);
+  const box = $("#confetti");
+  if (box) box.textContent = "";
+}
+
+function dropConfetti(gold) {
+  const box = $("#confetti");
+  if (!box) return;
+  clearConfetti();
+  if (!partyOn()) return;
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  const colors = gold ? CONFETTI_GOLD : CONFETTI_DOC;
+  const n = gold ? 90 : 70;
+  const frag = document.createDocumentFragment();
+  for (let i = 0; i < n; i++) {
+    const c = document.createElement("i");
+    const w = 6 + Math.random() * 7;
+    const round = Math.random() < 0.28;             /* 少數做成小圓點，比較活潑 */
+    c.style.left = (Math.random() * 100) + "%";
+    c.style.width = w + "px";
+    c.style.height = (round ? w : w * (0.4 + Math.random() * 0.5)) + "px";
+    c.style.background = colors[i % colors.length];
+    c.style.borderRadius = round ? "50%" : "1px";
+    c.style.setProperty("--dx", (Math.random() * 220 - 110) + "px");
+    c.style.setProperty("--rot", (Math.random() * 1080 - 540) + "deg");
+    c.style.animationDuration = (2.1 + Math.random() * 1.7) + "s";
+    c.style.animationDelay = (Math.random() * 0.5) + "s";
+    c.style.opacity = "0";
+    frag.appendChild(c);
+  }
+  box.appendChild(frag);
+  confettiTimer = setTimeout(clearConfetti, 4600);
+}
 
 /* ================================================================
    彈窗
@@ -2815,6 +3059,8 @@ function openDay(ds) {
   switchView("view-brief");
 }
 function switchView(id) {
+  if (view === "view-setup" && id !== "view-setup" && setupDirty)
+    note("設定還沒儲存，內容先幫你留著，回設定頁按「儲存設定」才會生效", "seal");
   view = id;
   $$(".view").forEach(v => v.classList.toggle("on", v.id === id));
   $$(".tab").forEach(t => t.classList.toggle("on", t.dataset.view === id));
@@ -2834,12 +3080,20 @@ function renderAll() {
 /* ================================================================
    設定
    ================================================================ */
-function fillSetup() {
+/* force = true 只有在「重新建檔／匯入資料」這種確定要覆蓋時才傳。
+   平常（切換分頁、雲端同步回來）如果老師打到一半還沒儲存，
+   就整個跳過，不能把他打的字洗掉。 */
+function fillSetup(force) {
+  if (setupDirty && !force) { markSetupDirty(); return; }
+  setupDirty = false;
+  markSetupDirty();
   $("#in-org").value = DB.org.name || "";
   $("#in-sub").value = DB.org.sub || "";
   $("#in-teacher").value = DB.org.teacher || "";
   $("#in-endpoint").value = DB.endpoint || "";
   $("#in-lex").value = DB.prefs.lex || "corp";
+  $("#in-skin").value = DB.prefs.skin || "doc";
+  $("#in-party").value = DB.prefs.party || "full";
   $("#in-sync").value = DB.prefs.sync || "auto";
   $("#in-parent-on").checked = !!DB.prefs.parent;
   renderCodes();
@@ -2850,6 +3104,14 @@ function fillSetup() {
   $("#in-teams").value = Object.keys(DB.teams.map)
     .sort((a, b) => Number(a) - Number(b))
     .map(k => k + " " + DB.teams.map[k]).join("\n");
+}
+
+/* 設定頁「還沒存」的提示：儲存鈕會變色並改字 */
+function markSetupDirty() {
+  const b = $("#setup-save");
+  if (!b) return;
+  b.classList.toggle("unsaved", setupDirty);
+  b.textContent = setupDirty ? "● 儲存設定（尚未存檔）" : "儲存設定";
 }
 
 function parseRoster(text) {
@@ -2881,6 +3143,9 @@ function saveSetup() {
   DB.org.ts = now();
   useLex($("#in-lex").value);
   applyLex();
+  DB.prefs.skin = $("#in-skin").value === "soft" ? "soft" : "doc";
+  DB.prefs.party = $("#in-party").value === "calm" ? "calm" : "full";
+  applySkin();
 
   const map = {};
   $("#in-teams").value.split("\n").forEach(l => {
@@ -2911,6 +3176,8 @@ function saveSetup() {
   DB.endpoint = ep;
   DB.prefs.sync = syncMode;
 
+  setupDirty = false;
+  markSetupDirty();
   Snd.play("stamp");
   commit();
   note("設定已儲存　" + list.length + " 人" + (removed > 0 ? "（移除 " + removed + " 人）" : ""), "seal");
@@ -3126,8 +3393,9 @@ function importData(file) {
     showDialog("確認匯入", "", body, [
       ["確定匯入", "btn btn-seal", () => {
         DB = Object.assign(blankDB(), p);
-        DB.prefs = Object.assign({ briefZoom: 1, muted: false, lex: "corp", parent: false, sync: "auto" }, DB.prefs);
+        DB.prefs = Object.assign({ briefZoom: 1, muted: false, lex: "corp", parent: false, sync: "auto", skin: "doc", party: "full" }, DB.prefs);
         closeDialog(); commit();
+        setupDirty = false; markSetupDirty();
         cur = today(); renderHead(); switchView("view-month");
         note("匯入完成", "gov");
       }],
@@ -3149,7 +3417,7 @@ function newTerm() {
       setTimeout(() => {
         DB = blankDB(); DB.org = org; DB.org.ts = now(); DB.endpoint = ep;
         closeDialog(); commit();
-        cur = today(); renderHead(); switchView("view-setup"); fillSetup();
+        cur = today(); renderHead(); setupDirty = false; switchView("view-setup"); fillSetup(true);
         note("已重新建檔，請重新建立員工名冊", "seal");
       }, 500);
     }],
@@ -3231,6 +3499,24 @@ function bind() {
   });
 
   $("#setup-save").addEventListener("click", saveSetup);
+
+  /* 只要老師在設定頁動過任何一格，就標記「尚未存檔」，
+     在他按下儲存之前，誰都不准把這些欄位重填 */
+  $("#view-setup").addEventListener("input", e => {
+    if (!e.target.matches("input,textarea,select")) return;
+    if (e.target.closest(".codes")) return;         /* 家長代碼面板不算 */
+    if (!setupDirty) { setupDirty = true; markSetupDirty(); }
+  });
+  /* 介面風格選了就立刻預覽，不用先儲存也看得到 */
+  $("#in-skin").addEventListener("change", e => {
+    document.body.classList.toggle("skin-soft", e.target.value === "soft");
+    Snd.play("page");
+  });
+
+  $("#view-setup").addEventListener("change", e => {
+    if (!e.target.matches("input,textarea,select")) return;
+    if (!setupDirty) { setupDirty = true; markSetupDirty(); }
+  });
   $("#btn-export").addEventListener("click", () => exportData());
   $("#btn-import").addEventListener("click", () => $("#file-import").click());
   $("#file-import").addEventListener("change", e => {
@@ -3332,7 +3618,7 @@ function bind() {
 
   /* 手動模式下還沒同步就要關掉視窗時，攔一下 */
   window.addEventListener("beforeunload", e => {
-    if (Remote.active && Remote.manual && Remote.dirty) {
+    if (setupDirty || (Remote.active && Remote.manual && Remote.dirty)) {
       e.preventDefault(); e.returnValue = "";
     }
   });
@@ -3352,6 +3638,14 @@ function useLex(key) {
   LEX = LEX_SETS[key] || LEX_SETS.corp;
   DB.prefs.lex = LEX_SETS[key] ? key : "corp";
 }
+
+/* 介面風格：公文體（預設，方正明體）／親和體（圓角黑體）
+   只換外觀，資料與用詞完全不動 */
+function applySkin() {
+  const soft = ((DB.prefs && DB.prefs.skin) || "doc") === "soft";
+  document.body.classList.toggle("skin-soft", soft);
+}
+function partyOn() { return ((DB.prefs && DB.prefs.party) || "full") === "full"; }
 
 /* 把語彙表套進固定在 HTML 裡的標題 */
 function applyLex() {
@@ -3389,6 +3683,7 @@ function boot() {
 
   calMonth = dparse(cur);
   applyLex();
+  applySkin();
   bind();
   renderHead();
 
