@@ -583,6 +583,79 @@ textarea{min-height:132px}
 .codes-empty{grid-column:1/-1;font-family:var(--serif);font-style:italic;
   color:var(--ink-faint);letter-spacing:.1em;padding:12px 0}
 
+/* =====================  QR 家長通知單（列印）  ===================== */
+#printsheet{
+  position:fixed;inset:0;z-index:1200;overflow:auto;
+  background:#3b2f26;padding:0 0 40px;
+}
+.ps-bar{
+  position:sticky;top:0;z-index:5;
+  display:flex;align-items:center;gap:12px;
+  background:linear-gradient(180deg,#4a3b2d,#33281f);
+  border-bottom:3px solid var(--desk-dark);
+  box-shadow:0 5px 16px rgba(0,0,0,.5);
+  padding:11px 20px;
+}
+.ps-bar .ps-t{font-family:var(--serif);font-weight:900;font-size:1.12rem;
+  letter-spacing:.18em;color:#f0e3c6}
+.ps-bar .ps-d{font-size:.84rem;color:#c0ad8b}
+.ps-bar .ps-sp{flex:1}
+.ps-pages{padding:20px 0}
+
+.ps-page{
+  width:210mm;min-height:297mm;margin:0 auto 20px;
+  background:#fff;color:#111;
+  padding:10mm;
+  display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:64mm;
+  box-shadow:0 10px 34px rgba(0,0,0,.5);
+}
+.slip{
+  border:1px dashed #999;
+  padding:5mm 5mm 4mm;
+  display:flex;flex-direction:column;
+  break-inside:avoid;page-break-inside:avoid;
+  position:relative;
+}
+.slip .s-org{
+  font-family:var(--serif);font-weight:700;font-size:9pt;letter-spacing:.1em;
+  color:#333;border-bottom:1.5pt solid #222;padding-bottom:1.5mm;
+  display:flex;align-items:baseline;gap:3mm;
+}
+.slip .s-org .s-doc{margin-left:auto;font-weight:900;font-size:10pt;letter-spacing:.16em}
+.slip .s-body{flex:1;display:flex;gap:4mm;padding-top:3mm;align-items:flex-start}
+.slip .s-qr{width:29mm;flex:0 0 auto}
+.slip .s-qr svg{width:100%;height:auto;display:block;border:1px solid #ddd}
+.slip .s-info{flex:1;min-width:0;padding-top:1mm}
+.slip .s-name{font-family:var(--serif);font-weight:900;font-size:15pt;letter-spacing:.06em;color:#000}
+.slip .s-seat{
+  font-family:var(--mono);font-size:8pt;font-weight:700;color:#fff;background:#555;
+  border-radius:2px;padding:0.5mm 2mm;margin-right:2mm;vertical-align:2px;
+}
+.slip .s-code{font-family:var(--mono);font-size:9pt;color:#666;margin-top:1.5mm;letter-spacing:.1em}
+.slip .s-how{font-size:8.5pt;color:#333;line-height:1.65;margin-top:2mm}
+.slip .s-foot{
+  font-size:7.5pt;color:#777;border-top:1px solid #ddd;
+  padding-top:1.5mm;margin-top:auto;line-height:1.7;
+}
+.slip .s-seal{
+  font-family:var(--serif);font-weight:900;font-size:7pt;letter-spacing:.14em;
+  color:#b8342a;border:1.2pt solid #b8342a;border-radius:1mm;
+  padding:0.4mm 1.4mm;margin-right:1.5mm;white-space:nowrap;
+}
+
+@media print{
+  @page{size:A4;margin:0}
+  html,body{height:auto !important;overflow:visible !important;background:#fff !important}
+  body > *{display:none !important}
+  body > #printsheet{display:block !important;position:static !important;
+    background:#fff !important;padding:0 !important;overflow:visible !important}
+  .ps-bar{display:none !important}
+  .ps-pages{padding:0 !important}
+  .ps-page{box-shadow:none !important;margin:0 !important;
+    width:auto !important;min-height:auto !important;page-break-after:always}
+  .ps-page:last-child{page-break-after:auto}
+}
+
 /* =====================  彈窗  ===================== */
 .veil{
   position:fixed;inset:0;background:rgba(20,14,10,.62);backdrop-filter:blur(3px);
@@ -969,6 +1042,7 @@ textarea{min-height:132px}
             </label>
             <span style="flex:1"></span>
             <button class="btn btn-sm" id="btn-codes">產生／補發代碼</button>
+            <button class="btn btn-sm btn-seal" id="btn-slips">列印 QR 通知單</button>
             <button class="btn btn-sm btn-ghost" id="btn-codes-copy">複製全部連結</button>
             <button class="btn btn-sm btn-ghost" id="btn-codes-reset">全部重新產生</button>
           </div>
@@ -1016,8 +1090,348 @@ textarea{min-height:132px}
   </div>
 </div>
 
+<!-- ============ QR 通知單（列印用） ============ -->
+<div id="printsheet" class="hide">
+  <div class="ps-bar">
+    <span class="ps-t">家長通知單</span>
+    <span class="ps-d" id="ps-count"></span>
+    <span class="ps-sp"></span>
+    <button class="btn btn-sm btn-seal" id="ps-print">列印</button>
+    <button class="btn btn-sm btn-ghost" id="ps-close">關閉</button>
+  </div>
+  <div class="ps-pages" id="ps-pages"></div>
+</div>
+
 <div id="note">訊息</div>
 
+<script>
+/* =====================================================================
+   極簡 QR Code 產生器（byte 模式，版本 1–15，容錯 L／M）
+   自己算，不連任何外部服務，家長連結不會離開這台電腦。
+   ===================================================================== */
+var QR = (function () {
+  "use strict";
+
+  /* ---- GF(256) ---- */
+  var EXP = new Uint8Array(512), LOG = new Uint8Array(256);
+  (function () {
+    var x = 1;
+    for (var i = 0; i < 255; i++) { EXP[i] = x; LOG[x] = i; x <<= 1; if (x & 0x100) x ^= 0x11d; }
+    for (var j = 255; j < 512; j++) EXP[j] = EXP[j - 255];
+  })();
+  function gmul(a, b) { return (a && b) ? EXP[LOG[a] + LOG[b]] : 0; }
+
+  function rsPoly(deg) {
+    var p = [1];
+    for (var i = 0; i < deg; i++) {
+      var n = new Array(p.length + 1).fill(0);
+      for (var j = 0; j < p.length; j++) { n[j] ^= p[j]; n[j + 1] ^= gmul(p[j], EXP[i]); }
+      p = n;
+    }
+    return p;
+  }
+  function rsEncode(data, ecLen) {
+    var gen = rsPoly(ecLen), res = new Array(ecLen).fill(0);
+    for (var i = 0; i < data.length; i++) {
+      var factor = data[i] ^ res[0];
+      res.shift(); res.push(0);
+      if (factor) for (var j = 0; j < ecLen; j++) res[j] ^= gmul(gen[j + 1], factor);
+    }
+    return res;
+  }
+
+  /* ---- 版本表：每版總碼字數 ---- */
+  var TOTAL = [0, 26, 44, 70, 100, 134, 172, 196, 242, 292, 346, 404, 466, 532, 581, 655];
+
+  /* ---- 區塊結構 [每塊EC碼字, 群1塊數, 群1資料, 群2塊數, 群2資料] ---- */
+  var BLOCKS = {
+    L: [null,
+      [7, 1, 19, 0, 0], [10, 1, 34, 0, 0], [15, 1, 55, 0, 0], [20, 1, 80, 0, 0],
+      [26, 1, 108, 0, 0], [18, 2, 68, 0, 0], [20, 2, 78, 0, 0], [24, 2, 97, 0, 0],
+      [30, 2, 116, 0, 0], [18, 2, 68, 2, 69], [20, 4, 81, 0, 0], [24, 2, 92, 2, 93],
+      [26, 4, 107, 0, 0], [30, 3, 115, 1, 116], [22, 5, 87, 1, 88]],
+    M: [null,
+      [10, 1, 16, 0, 0], [16, 1, 28, 0, 0], [26, 1, 44, 0, 0], [18, 2, 32, 0, 0],
+      [24, 2, 43, 0, 0], [16, 4, 27, 0, 0], [18, 4, 31, 0, 0], [22, 2, 38, 2, 39],
+      [22, 3, 36, 2, 37], [26, 4, 43, 1, 44], [30, 1, 50, 4, 51], [22, 6, 36, 2, 37],
+      [22, 8, 37, 1, 38], [24, 4, 40, 5, 41], [24, 5, 41, 5, 42]]
+  };
+
+  var ALIGN = [null, [], [6, 18], [6, 22], [6, 26], [6, 30], [6, 34],
+    [6, 22, 38], [6, 24, 42], [6, 26, 46], [6, 28, 50], [6, 30, 54],
+    [6, 32, 58], [6, 34, 62], [6, 26, 46, 66], [6, 26, 48, 70]];
+
+  var ECBITS = { L: 1, M: 0 };
+
+  function dataCapacity(ver, ec) {
+    var b = BLOCKS[ec][ver];
+    return b[1] * b[2] + b[3] * b[4];
+  }
+
+  /* ---- 文字 → UTF-8 位元組 ---- */
+  function toBytes(str) {
+    var out = [];
+    for (var i = 0; i < str.length; i++) {
+      var c = str.charCodeAt(i);
+      if (c < 0x80) out.push(c);
+      else if (c < 0x800) { out.push(0xc0 | (c >> 6), 0x80 | (c & 63)); }
+      else if (c >= 0xd800 && c < 0xdc00 && i + 1 < str.length) {
+        var c2 = str.charCodeAt(++i);
+        var cp = 0x10000 + ((c - 0xd800) << 10) + (c2 - 0xdc00);
+        out.push(0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 63), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63));
+      } else { out.push(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63)); }
+    }
+    return out;
+  }
+
+  /* ---- 格式資訊與版本資訊 ---- */
+  function formatBits(ec, mask) {
+    var d = (ECBITS[ec] << 3) | mask, v = d << 10;
+    for (var i = 4; i >= 0; i--) if (v & (1 << (i + 10))) v ^= 0x537 << i;
+    return ((d << 10) | v) ^ 0x5412;
+  }
+  function versionBits(ver) {
+    var r = ver << 12;
+    for (var i = 5; i >= 0; i--) if (r & (1 << (i + 12))) r ^= 0x1f25 << i;
+    return (ver << 12) | r;
+  }
+
+  /* ---- 主流程 ---- */
+  function encode(text, ecLevel) {
+    var ec = ecLevel || "M";
+    var bytes = toBytes(text);
+    var ver = 0;
+    for (var v = 1; v <= 15; v++) {
+      var lenBits = v < 10 ? 8 : 16;
+      var need = Math.ceil((4 + lenBits + bytes.length * 8) / 8);
+      if (need <= dataCapacity(v, ec)) { ver = v; break; }
+    }
+    if (!ver) throw new Error("內容太長，QR 放不下");
+
+    var lenBits2 = ver < 10 ? 8 : 16;
+    var bits = [];
+    function push(val, n) { for (var i = n - 1; i >= 0; i--) bits.push((val >> i) & 1); }
+    push(4, 4);                       /* byte 模式 */
+    push(bytes.length, lenBits2);
+    for (var i = 0; i < bytes.length; i++) push(bytes[i], 8);
+
+    var cap = dataCapacity(ver, ec) * 8;
+    for (var t = 0; t < 4 && bits.length < cap; t++) bits.push(0);   /* 終止符 */
+    while (bits.length % 8) bits.push(0);
+    var pad = [0xec, 0x11], pi = 0;
+    while (bits.length < cap) { push(pad[pi++ % 2], 8); }
+
+    /* 切成資料碼字 */
+    var codes = [];
+    for (var k = 0; k < bits.length; k += 8) {
+      var b = 0;
+      for (var m = 0; m < 8; m++) b = (b << 1) | bits[k + m];
+      codes.push(b);
+    }
+
+    /* 分區塊、算 EC */
+    var st = BLOCKS[ec][ver], ecLen = st[0];
+    var blocks = [], ecBlocks = [], pos = 0, bi;
+    for (bi = 0; bi < st[1]; bi++) { blocks.push(codes.slice(pos, pos + st[2])); pos += st[2]; }
+    for (bi = 0; bi < st[3]; bi++) { blocks.push(codes.slice(pos, pos + st[4])); pos += st[4]; }
+    for (bi = 0; bi < blocks.length; bi++) ecBlocks.push(rsEncode(blocks[bi], ecLen));
+
+    /* 交錯 */
+    var out = [], maxLen = Math.max(st[2], st[4]), c;
+    for (c = 0; c < maxLen; c++)
+      for (bi = 0; bi < blocks.length; bi++)
+        if (c < blocks[bi].length) out.push(blocks[bi][c]);
+    for (c = 0; c < ecLen; c++)
+      for (bi = 0; bi < ecBlocks.length; bi++) out.push(ecBlocks[bi][c]);
+
+    var finalBits = [];
+    for (var q = 0; q < out.length; q++)
+      for (var r = 7; r >= 0; r--) finalBits.push((out[q] >> r) & 1);
+
+    return buildMatrix(ver, ec, finalBits);
+  }
+
+  function buildMatrix(ver, ec, bits) {
+    var size = ver * 4 + 17, r, c, i;
+    var mx = [], rs = [];
+    for (r = 0; r < size; r++) { mx.push(new Array(size).fill(false)); rs.push(new Array(size).fill(false)); }
+
+    function finder(row, col) {
+      for (r = -1; r <= 7; r++) for (c = -1; c <= 7; c++) {
+        var rr = row + r, cc = col + c;
+        if (rr < 0 || rr >= size || cc < 0 || cc >= size) continue;
+        var on = (r >= 0 && r <= 6 && (c === 0 || c === 6)) ||
+                 (c >= 0 && c <= 6 && (r === 0 || r === 6)) ||
+                 (r >= 2 && r <= 4 && c >= 2 && c <= 4);
+        mx[rr][cc] = on; rs[rr][cc] = true;
+      }
+    }
+    finder(0, 0); finder(0, size - 7); finder(size - 7, 0);
+
+    /* 定位線 */
+    for (i = 8; i < size - 8; i++) {
+      mx[6][i] = (i % 2 === 0); rs[6][i] = true;
+      mx[i][6] = (i % 2 === 0); rs[i][6] = true;
+    }
+
+    /* 校正圖案 */
+    var ap = ALIGN[ver], last = ap.length - 1;
+    for (var a = 0; a < ap.length; a++) for (var b = 0; b < ap.length; b++) {
+      if ((a === 0 && b === 0) || (a === 0 && b === last) || (a === last && b === 0)) continue;
+      var ar = ap[a], ac = ap[b];
+      for (r = -2; r <= 2; r++) for (c = -2; c <= 2; c++) {
+        mx[ar + r][ac + c] = (Math.max(Math.abs(r), Math.abs(c)) !== 1);
+        rs[ar + r][ac + c] = true;
+      }
+    }
+
+    /* 保留格式／版本區 */
+    for (i = 0; i < 9; i++) { rs[8][i] = true; rs[i][8] = true; }
+    for (i = 0; i < 8; i++) { rs[8][size - 1 - i] = true; rs[size - 1 - i][8] = true; }
+    mx[size - 8][8] = true; rs[size - 8][8] = true;      /* 固定為深色 */
+    if (ver >= 7) {
+      for (i = 0; i < 6; i++) for (var j = 0; j < 3; j++) {
+        rs[size - 11 + j][i] = true; rs[i][size - 11 + j] = true;
+      }
+    }
+
+    /* 填資料 */
+    var dir = -1, row = size - 1, bit = 0;
+    for (var col = size - 1; col > 0; col -= 2) {
+      if (col === 6) col--;
+      for (;;) {
+        for (var s = 0; s < 2; s++) {
+          var cc2 = col - s;
+          if (!rs[row][cc2]) {
+            mx[row][cc2] = (bit < bits.length) ? bits[bit++] === 1 : false;
+          }
+        }
+        row += dir;
+        if (row < 0 || row >= size) { row -= dir; dir = -dir; break; }
+      }
+    }
+
+    /* 選遮罩 */
+    var best = null, bestScore = Infinity, bestMask = 0;
+    for (var mask = 0; mask < 8; mask++) {
+      var t = applyMask(mx, rs, size, mask);
+      putFormat(t, size, ec, mask);
+      if (ver >= 7) putVersion(t, size, ver);
+      var sc = penalty(t, size);
+      if (sc < bestScore) { bestScore = sc; best = t; bestMask = mask; }
+    }
+    return best;
+  }
+
+  function maskFn(m, r, c) {
+    switch (m) {
+      case 0: return (r + c) % 2 === 0;
+      case 1: return r % 2 === 0;
+      case 2: return c % 3 === 0;
+      case 3: return (r + c) % 3 === 0;
+      case 4: return (Math.floor(r / 2) + Math.floor(c / 3)) % 2 === 0;
+      case 5: return ((r * c) % 2) + ((r * c) % 3) === 0;
+      case 6: return (((r * c) % 2) + ((r * c) % 3)) % 2 === 0;
+      default: return ((((r + c) % 2) + ((r * c) % 3)) % 2) === 0;
+    }
+  }
+  function applyMask(mx, rs, size, m) {
+    var t = [];
+    for (var r = 0; r < size; r++) {
+      t.push(mx[r].slice());
+      for (var c = 0; c < size; c++) if (!rs[r][c] && maskFn(m, r, c)) t[r][c] = !t[r][c];
+    }
+    return t;
+  }
+  function putFormat(t, size, ec, mask) {
+    var f = formatBits(ec, mask), i, on;
+    for (i = 0; i < 15; i++) {
+      on = ((f >> i) & 1) === 1;
+      /* 直向：第 8 欄 */
+      if (i < 6) t[i][8] = on;
+      else if (i < 8) t[i + 1][8] = on;
+      else t[size - 15 + i][8] = on;
+      /* 橫向：第 8 列 */
+      if (i < 8) t[8][size - i - 1] = on;
+      else if (i === 8) t[8][7] = on;
+      else t[8][14 - i] = on;
+    }
+    t[size - 8][8] = true;        /* 固定深色模組 */
+  }
+  function putVersion(t, size, ver) {
+    var v = versionBits(ver);
+    for (var i = 0; i < 18; i++) {
+      var on = ((v >> i) & 1) === 1;
+      var r = Math.floor(i / 3), c = i % 3;
+      t[size - 11 + c][r] = on;
+      t[r][size - 11 + c] = on;
+    }
+  }
+  function penalty(t, size) {
+    var p = 0, r, c, i, run, dark = 0;
+    for (r = 0; r < size; r++) {
+      run = 1;
+      for (c = 1; c < size; c++) {
+        if (t[r][c] === t[r][c - 1]) { run++; if (run === 5) p += 3; else if (run > 5) p++; }
+        else run = 1;
+      }
+    }
+    for (c = 0; c < size; c++) {
+      run = 1;
+      for (r = 1; r < size; r++) {
+        if (t[r][c] === t[r - 1][c]) { run++; if (run === 5) p += 3; else if (run > 5) p++; }
+        else run = 1;
+      }
+    }
+    for (r = 0; r < size - 1; r++) for (c = 0; c < size - 1; c++)
+      if (t[r][c] === t[r][c + 1] && t[r][c] === t[r + 1][c] && t[r][c] === t[r + 1][c + 1]) p += 3;
+    var pat = [true, false, true, true, true, false, true, false, false, false, false];
+    function match(get) {
+      var n = 0;
+      for (var s = 0; s + 11 <= size; s++) {
+        var ok = true, ok2 = true;
+        for (var k = 0; k < 11; k++) {
+          if (get(s + k) !== pat[k]) ok = false;
+          if (get(s + k) !== pat[10 - k]) ok2 = false;
+        }
+        if (ok || ok2) n++;
+      }
+      return n;
+    }
+    for (r = 0; r < size; r++) p += 40 * match((function (rr) { return function (i2) { return t[rr][i2]; }; })(r));
+    for (c = 0; c < size; c++) p += 40 * match((function (cc) { return function (i2) { return t[i2][cc]; }; })(c));
+    for (r = 0; r < size; r++) for (c = 0; c < size; c++) if (t[r][c]) dark++;
+    var pct = dark * 100 / (size * size);
+    p += 10 * Math.floor(Math.abs(pct - 50) / 5);
+    return p;
+  }
+
+  /* ---- 輸出成 SVG ---- */
+  function svg(text, opts) {
+    opts = opts || {};
+    var m = encode(text, opts.ec || "M");
+    var n = m.length, q = opts.quiet == null ? 3 : opts.quiet;
+    var total = n + q * 2, d = "";
+    for (var r = 0; r < n; r++) {
+      for (var c = 0; c < n; c++) {
+        if (!m[r][c]) continue;
+        var c2 = c;
+        while (c2 + 1 < n && m[r][c2 + 1]) c2++;
+        d += "M" + (c + q) + " " + (r + q) + "h" + (c2 - c + 1) + "v1h-" + (c2 - c + 1) + "z";
+        c = c2;
+      }
+    }
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + total + ' ' + total +
+      '" shape-rendering="crispEdges" style="width:100%;height:auto;display:block">' +
+      '<rect width="' + total + '" height="' + total + '" fill="#fff"/>' +
+      '<path d="' + d + '" fill="#000"/></svg>';
+  }
+
+  return { encode: encode, svg: svg, capacity: dataCapacity };
+})();
+
+
+</script>
 <script>
 "use strict";
 /* =====================================================================
@@ -2520,6 +2934,110 @@ async function warnIfOpen() {
   ]);
 }
 
+/* ---------------------------------------------------- QR 家長通知單 */
+const SLIPS_PER_PAGE = 8;
+
+function buildSlips() {
+  const list = students().filter(s => s.code)
+    .sort((a, b) => (a.seat || 0) - (b.seat || 0));
+  if (!list.length) { note("還沒有代碼，請先按「產生／補發代碼」"); return; }
+  if (!Remote.active) {
+    note("請先設定「共用連線」，家長連結才有作用", "seal");
+  }
+
+  const pages = $("#ps-pages");
+  pages.textContent = "";
+  const org = (DB.org.name || "").trim();
+  const teacher = (DB.org.teacher || "").trim();
+
+  let page = null;
+  list.forEach((s, i) => {
+    if (i % SLIPS_PER_PAGE === 0) {
+      page = document.createElement("div");
+      page.className = "ps-page";
+      pages.appendChild(page);
+    }
+    page.appendChild(slipEl(s, org, teacher));
+  });
+
+  $("#ps-count").textContent =
+    list.length + " 位　｜　共 " + Math.ceil(list.length / SLIPS_PER_PAGE) + " 頁（每頁 8 張，沿虛線剪開）";
+  $("#printsheet").classList.remove("hide");
+  document.body.style.overflow = "hidden";
+}
+
+function slipEl(s, org, teacher) {
+  const d = document.createElement("div");
+  d.className = "slip";
+
+  const head = document.createElement("div");
+  head.className = "s-org";
+  head.appendChild(document.createTextNode(org || "班級聯絡簿"));
+  const doc = document.createElement("span");
+  doc.className = "s-doc"; doc.textContent = "電子聯絡簿";
+  head.appendChild(doc);
+  d.appendChild(head);
+
+  const body = document.createElement("div");
+  body.className = "s-body";
+
+  const qr = document.createElement("div");
+  qr.className = "s-qr";
+  try {
+    qr.innerHTML = QR.svg(parentLink(s.code), { ec: "M", quiet: 2 });
+  } catch (e) {
+    qr.textContent = "（網址過長，無法產生 QR）";
+  }
+  body.appendChild(qr);
+
+  const info = document.createElement("div");
+  info.className = "s-info";
+  const nm = document.createElement("div");
+  nm.className = "s-name";
+  if (s.seat) {
+    const st = document.createElement("span");
+    st.className = "s-seat"; st.textContent = s.seat;
+    nm.appendChild(st);
+  }
+  nm.appendChild(document.createTextNode(s.name));
+  info.appendChild(nm);
+
+  const cd = document.createElement("div");
+  cd.className = "s-code"; cd.textContent = "查詢碼 " + s.code;
+  info.appendChild(cd);
+
+  const how = document.createElement("div");
+  how.className = "s-how";
+  how.textContent = "用手機相機對準左邊方塊，就會跳出連結，" +
+    "可以看到當天的聯絡簿與孩子的作業完成情形。建議存成書籤，每天都能查看。";
+  info.appendChild(how);
+  body.appendChild(info);
+  d.appendChild(body);
+
+  const foot = document.createElement("div");
+  foot.className = "s-foot";
+  const seal = document.createElement("span");
+  seal.className = "s-seal"; seal.textContent = "家長專用";
+  foot.appendChild(seal);
+  foot.appendChild(document.createTextNode(
+    "僅顯示 " + s.name + " 一位同學的資料，請勿轉傳。"));
+  if (teacher) {
+    const t = document.createElement("span");
+    t.style.whiteSpace = "nowrap";
+    t.textContent = "　導師：" + teacher;
+    foot.appendChild(t);
+  }
+  d.appendChild(foot);
+
+  return d;
+}
+
+function closeSlips() {
+  $("#printsheet").classList.add("hide");
+  $("#ps-pages").textContent = "";
+  document.body.style.overflow = "";
+}
+
 /* ---------------------------------------------------- 備份與還原 */
 function exportData(silent) {
   const blob = new Blob([JSON.stringify(DB, null, 1)], { type: "application/json" });
@@ -2675,6 +3193,10 @@ function bind() {
     note(made ? ("已補發 " + made + " 組代碼") : "每個人都已經有代碼了", "gov");
   });
 
+  $("#btn-slips").addEventListener("click", buildSlips);
+  $("#ps-print").addEventListener("click", () => window.print());
+  $("#ps-close").addEventListener("click", closeSlips);
+
   $("#btn-codes-copy").addEventListener("click", () => {
     const rows = students().filter(s => s.code)
       .sort((a, b) => (a.seat || 0) - (b.seat || 0))
@@ -2739,7 +3261,7 @@ function bind() {
 
   document.addEventListener("keydown", e => {
     if (e.target.matches("input,textarea,select")) return;
-    if (e.key === "Escape") { closeDialog(); closeFinale(); }
+    if (e.key === "Escape") { closeDialog(); closeFinale(); closeSlips(); }
     if (e.key === "ArrowLeft"  && view !== "view-month") $("#day-prev").click();
     if (e.key === "ArrowRight" && view !== "view-month") $("#day-next").click();
     if (e.key >= "1" && e.key <= "4") $$(".tab")[Number(e.key) - 1].click();
