@@ -93,8 +93,8 @@ header{
   background:linear-gradient(180deg,#4a3b2d 0%,#33281f 100%);
   border-bottom:3px solid var(--desk-dark);
   box-shadow:0 6px 18px rgba(0,0,0,.55);
-  padding:0 18px;
-  display:flex;align-items:center;gap:18px;
+  padding:0 16px;
+  display:flex;align-items:center;gap:14px;
   height:64px;
   position:relative;z-index:60;
 }
@@ -163,7 +163,7 @@ header::after{
 
 /* 連線狀態章 */
 .linkchip{
-  display:flex;align-items:center;gap:6px;
+  display:flex;align-items:center;gap:6px;flex:0 0 auto;white-space:nowrap;
   font-family:var(--face);font-size:.78rem;letter-spacing:.1em;font-weight:700;
   padding:5px 11px;border-radius:var(--r-sm);cursor:pointer;
   border:1.5px solid;transition:filter .15s;
@@ -836,6 +836,31 @@ textarea{min-height:132px}
   .bigseal .s1{font-size:1.06rem}
 }
 
+/* 示範模式的警示條（頁首）與復原提示（設定頁） */
+.demochip{
+  display:flex;align-items:center;flex:0 0 auto;
+  font-family:var(--face);font-size:.78rem;letter-spacing:.08em;font-weight:700;
+  padding:5px 12px;border-radius:var(--r-sm);cursor:pointer;
+  color:#ffe9c2;border:1.5px solid #b8752a;background:rgba(150,86,18,.62);
+  animation:demoPulse 2.2s ease-in-out infinite;white-space:nowrap;
+}
+.demochip:hover{filter:brightness(1.18)}
+.demochip b{color:#fff}
+@keyframes demoPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(216,134,44,.5)}
+  50%    {box-shadow:0 0 0 6px rgba(216,134,44,0)}
+}
+
+.rescue{
+  display:flex;align-items:center;gap:14px;margin-top:12px;
+  border:1.5px solid var(--gold);border-left-width:5px;border-radius:var(--r-sm);
+  background:rgba(168,132,44,.12);padding:10px 14px;
+}
+.rescue .rc-l{flex:1;min-width:0}
+.rescue .rc-t{font-family:var(--face);font-weight:900;letter-spacing:.1em;
+  font-size:.86rem;color:#7a5f16}
+.rescue .rc-d{font-size:.9rem;color:var(--ink-soft);margin-top:2px}
+
 /* =====================  彩帶  ===================== */
 .confetti{
   position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1;
@@ -930,7 +955,11 @@ body.skin-soft #note{border-radius:var(--r-sm)}
     <div class="tab" data-view="view-setup">設定</div>
   </div>
 
-  <button class="btn btn-sm btn-ghost" id="mute" title="開關音效" style="color:#c5b391;border-color:#7a674f">♪</button>
+  <button class="btn btn-sm btn-ghost" id="mute" title="開關音效" style="color:#c5b391;border-color:#7a674f;flex:0 0 auto;white-space:nowrap">♪</button>
+
+  <div class="demochip hide" id="demochip" title="結束示範、還原原本的資料">
+    示範模式　<b>點此還原</b>
+  </div>
 
   <div class="linkchip link-local" id="linkchip" title="資料儲存位置">
     <span class="dot"></span><span id="link-text">本機保存</span>
@@ -1012,6 +1041,7 @@ body.skin-soft #note{border-radius:var(--r-sm)}
       <div class="sheet-tools">
         <a class="btn btn-ghost" id="btn-guide" href="說明.html" target="_blank" rel="noopener"
            style="text-decoration:none">使用說明</a>
+        <button class="btn btn-sm hide" id="btn-exitdemo">結束示範，還原資料</button>
         <button class="btn btn-seal" id="setup-save">儲存設定</button>
       </div>
     </div>
@@ -1124,10 +1154,21 @@ body.skin-soft #note{border-radius:var(--r-sm)}
             <button class="btn btn-ghost" id="btn-newterm">新學年重新建檔</button>
             <button class="btn btn-ghost" id="btn-demo">載入示範資料</button>
           </div>
+
+          <div class="rescue hide" id="rescue-box">
+            <div class="rc-l">
+              <div class="rc-t">有一份可以復原的紀錄</div>
+              <div class="rc-d" id="rescue-what"></div>
+            </div>
+            <button class="btn btn-seal btn-sm" id="btn-rescue">復原成這一份</button>
+          </div>
+
           <div class="dlg-note">
             資料目前存在這台裝置的瀏覽器裡，關掉分頁也不會消失。<b>換電腦、換瀏覽器、或清除瀏覽資料就會不見</b>，
             所以請養成每週匯出一次備份的習慣。<br>
-            「新學年重新建檔」會清空所有派工與結案紀錄，但會先自動下載一份備份給你。
+            「新學年重新建檔」會清空所有派工與結案紀錄，但會先自動下載一份備份給你。<br>
+            「載入示範資料」會切換成<b>示範模式</b>：暫時停掉雲端連線，怎麼玩都不會影響班級，
+            按「結束示範」就整份還原。
           </div>
         </div>
       </div>
@@ -1941,7 +1982,7 @@ function blankDB() {
     students: { list: [], ts: now() },
     days:     {},
     flags:    {},
-    prefs:    { briefZoom: 1, muted: false, lex: "corp", parent: false, sync: "auto", skin: "doc", party: "full" },
+    prefs:    { briefZoom: 1, muted: false, lex: "corp", parent: false, sync: "auto", skin: "doc", party: "full", demoMode: false, epStash: "", joined: "" },
     endpoint: ""
   };
 }
@@ -2006,7 +2047,7 @@ function loadLocal() {
     DB.students = Object.assign({ list: [], ts: 0 }, DB.students);
     DB.days     = DB.days || {};
     DB.flags    = DB.flags || {};
-    DB.prefs    = Object.assign({ briefZoom: 1, muted: false, lex: "corp", parent: false, sync: "auto", skin: "doc", party: "full" }, DB.prefs);
+    DB.prefs    = Object.assign({ briefZoom: 1, muted: false, lex: "corp", parent: false, sync: "auto", skin: "doc", party: "full", demoMode: false, epStash: "", joined: "" }, DB.prefs);
     return true;
   } catch (e) {
     /* 絕不自動清空資料 —— 保留原始字串供人工救援 */
@@ -2116,6 +2157,7 @@ const Remote = {
   },
 
   adoptCloud(r) {
+    if (localSummary().people || localSummary().days) saveRescue("採用雲端版本前");
     const prefs = DB.prefs, ep = DB.endpoint;
     DB = Object.assign(blankDB(), r.data);
     DB.prefs = prefs; DB.endpoint = ep;
@@ -2220,6 +2262,94 @@ const Remote = {
     }, 20000);
   }
 };
+
+/* ================================================================
+   復原點
+   ----------------------------------------------------------------
+   任何「整份換掉資料」的動作（載入示範、重新建檔、匯入備份、採用雲端版）
+   之前，都先把當下的資料原封不動存一份在這台電腦上。
+   萬一按錯了，設定頁按一下就能整份救回來。
+   ================================================================ */
+const RESCUE_KEY = () => APP.key + ".rescue";
+
+function saveRescue(label) {
+  try {
+    const snap = {
+      label: label,
+      at: now(),
+      ep: (DB.endpoint || "").trim(),
+      sum: summarize(DB),
+      data: JSON.parse(JSON.stringify(DB))
+    };
+    localStorage.setItem(RESCUE_KEY(), JSON.stringify(snap));
+  } catch (e) { console.warn("復原點存不下", e); }
+  renderRescue();
+}
+
+function readRescue() {
+  try {
+    const raw = localStorage.getItem(RESCUE_KEY());
+    if (!raw) return null;
+    const s = JSON.parse(raw);
+    return (s && s.data && s.data.students) ? s : null;
+  } catch (e) { return null; }
+}
+
+function stamp(ts) {
+  const d = new Date(ts || Date.now());
+  const p = n => String(n).padStart(2, "0");
+  return (d.getMonth() + 1) + "/" + d.getDate() + " " + p(d.getHours()) + ":" + p(d.getMinutes());
+}
+
+function renderRescue() {
+  const box = $("#rescue-box");
+  if (!box) return;
+  const s = readRescue();
+  if (!s) { box.classList.add("hide"); return; }
+  box.classList.remove("hide");
+  $("#rescue-what").textContent =
+    s.label + "（" + stamp(s.at) + "）　" + s.sum.people + " 人．" +
+    s.sum.days + " 個工作日" + (s.sum.org ? "．" + s.sum.org : "");
+}
+
+function doRestoreRescue() {
+  const s = readRescue();
+  if (!s) { note("目前沒有可以復原的紀錄", "seal"); return; }
+  const body = document.createElement("div");
+  body.className = "dlg-note"; body.style.fontSize = "1rem";
+  body.innerHTML =
+    "要把資料還原成「<b>" + escHtml(s.label) + "</b>」那個時間點的樣子嗎？<br><br>" +
+    "會還原成：<b>" + s.sum.people + " 人、" + s.sum.days + " 個工作日</b>" +
+    (s.sum.last ? "（最後一筆 " + escHtml(s.sum.last) + "）" : "") + "，" +
+    "時間是 <b>" + stamp(s.at) + "</b>。<br><br>" +
+    (s.ep ? "還原後會<b>一併上傳</b>，雲端和其他電腦也會跟著回到這一版。<br><br>" : "") +
+    "目前畫面上的資料會被換掉，但會先存成新的復原點，還可以再按一次換回來。";
+  showDialog("復原資料", "回到上一個狀態", body, [
+    ["確定復原", "btn btn-seal", () => {
+      const back = JSON.parse(JSON.stringify(DB));
+      const prefs = DB.prefs;
+      DB = Object.assign(blankDB(), s.data);
+      DB.prefs = prefs;                       /* 音量、風格這些是這台電腦自己的 */
+      DB.endpoint = s.ep || "";
+      DB.prefs.demoMode = false;
+      markJoined();
+      closeDialog();
+      try {
+        localStorage.setItem(RESCUE_KEY(), JSON.stringify({
+          label: "復原之前", at: now(), ep: (back.endpoint || "").trim(),
+          sum: summarize(back), data: back
+        }));
+      } catch (e) {}
+      setupDirty = false;
+      commit();
+      cur = today(); renderHead(); renderRescue(); renderAll();
+      if (view === "view-setup") fillSetup(true);
+      Remote.start();
+      note("已復原　" + summarize(DB).people + " 人", "seal");
+    }],
+    ["取消", "btn btn-ghost", closeDialog]
+  ]);
+}
 
 /* 記下「這台電腦已經跟這個網址對過帳了」，之後才走正常的合併 */
 function markJoined() {
@@ -2413,6 +2543,15 @@ function renderHead() {
       String(d.getMonth() + 1).padStart(2, "0") + "月" +
       String(d.getDate()).padStart(2, "0") + "日";
   $("#day-dow").textContent = DOW[d.getDay()] + (cur === today() ? "．今日" : "");
+  applyDemoMode();
+}
+
+/* 示範模式時：頁首掛一條很難忽略的警示，設定頁多一個結束按鈕 */
+function applyDemoMode() {
+  const on = !!(DB.prefs && DB.prefs.demoMode);
+  const chip = $("#demochip"), btn = $("#btn-exitdemo");
+  if (chip) chip.classList.toggle("hide", !on);
+  if (btn) btn.classList.toggle("hide", !on);
 }
 
 /* ================================================================
@@ -3250,6 +3389,8 @@ function fillSetup(force) {
     .sort((a, b) => (a.seat || 0) - (b.seat || 0))
     .map(s => [s.seat || "", s.name, s.team || ""].join(" ").trim())
     .join("\n");
+  renderRescue();
+  applyDemoMode();
   $("#in-teams").value = Object.keys(DB.teams.map)
     .sort((a, b) => Number(a) - Number(b))
     .map(k => k + " " + DB.teams.map[k]).join("\n");
@@ -3542,8 +3683,9 @@ function importData(file) {
     showDialog("確認匯入", "", body, [
       ["確定匯入", "btn btn-seal", () => {
         const epBefore = (DB.endpoint || "").trim();
+        saveRescue("匯入備份檔前");
         DB = Object.assign(blankDB(), p);
-        DB.prefs = Object.assign({ briefZoom: 1, muted: false, lex: "corp", parent: false, sync: "auto", skin: "doc", party: "full" }, DB.prefs);
+        DB.prefs = Object.assign({ briefZoom: 1, muted: false, lex: "corp", parent: false, sync: "auto", skin: "doc", party: "full", demoMode: false, epStash: "", joined: "" }, DB.prefs);
         /* 同一個雲端就是刻意還原，直接覆蓋上去；
            備份檔帶的是別的網址時，留給首次連線流程再問一次 */
         if ((DB.endpoint || "").trim() === epBefore) markJoined();
@@ -3565,6 +3707,7 @@ function newTerm() {
     "執行前會自動下載一份備份檔。確定要重新建檔嗎？";
   showDialog("新學年重新建檔", "", body, [
     ["先備份，然後清空", "btn btn-seal", () => {
+      saveRescue("新學年重新建檔前");
       exportData(true);
       const org = DB.org, ep = DB.endpoint;
       setTimeout(() => {
@@ -3577,6 +3720,87 @@ function newTerm() {
     }],
     ["取消", "btn btn-ghost", closeDialog]
   ]);
+}
+
+/* 「載入示範資料」是給人試玩的，絕對不能因此毀掉正在用的班級。
+   已經有資料時先問；連著雲端時會切成「示範模式」＝暫時斷線，
+   示範期間怎麼亂點都不會上傳，按「結束示範」就整份還原回來。 */
+function askDemo() {
+  const mine = localSummary();
+  const linked = Remote.active;
+
+  if (!mine.people && !mine.days && !linked) { loadDemo(); return; }
+
+  const body = document.createElement("div");
+  body.className = "dlg-note"; body.style.fontSize = "1rem";
+  body.innerHTML =
+    "載入示範資料會把畫面換成 <b>24 位假學生</b>的樣本內容。<br><br>" +
+    "這台電腦目前有：<b>" + mine.people + " 人、" + mine.days + " 個工作日</b>" +
+    (mine.org ? "（" + escHtml(mine.org) + "）" : "") + "。<br><br>" +
+    (linked
+      ? "按下去會<b>先自動存一份復原點，並暫時中斷雲端連線</b>，切換成「示範模式」。<br>" +
+        "示範期間不論怎麼操作，<b>雲端和其他電腦上的班級都不會被動到</b>。<br>" +
+        "看完按<b>「結束示範」</b>，資料和連線就會整份回來。"
+      : "按下去會<b>先自動存一份復原點</b>，看完按<b>「結束示範」</b>就能整份還原回來。");
+
+  showDialog("要載入示範資料嗎？", "可以還原", body, [
+    ["進入示範模式", "btn btn-seal", () => { closeDialog(); enterDemo(); }],
+    ["取消", "btn btn-ghost", closeDialog]
+  ]);
+}
+
+function enterDemo() {
+  saveRescue("進入示範模式前");
+  DB.prefs.demoMode = true;
+  DB.prefs.epStash = (DB.endpoint || "").trim();   /* 把連線網址收起來 */
+  DB.endpoint = "";
+  DB.prefs.joined = "";
+  Remote.start();                                   /* → 本機保存，不再上傳 */
+  loadDemo();
+  renderHead();
+  note("示範模式：雲端連線已暫停，看完請按「結束示範」", "gov");
+}
+
+function exitDemo() {
+  const s = readRescue();
+  const body = document.createElement("div");
+  body.className = "dlg-note"; body.style.fontSize = "1rem";
+  body.innerHTML = s
+    ? "要結束示範、把資料還原成<b>" + s.sum.people + " 人、" + s.sum.days +
+      " 個工作日</b>（" + stamp(s.at) + "）的樣子嗎？" +
+      (s.ep ? "<br><br>雲端連線也會一起接回來。" : "")
+    : "找不到進入示範模式前的備份（可能瀏覽器資料被清過）。<br><br>" +
+      "還是要結束示範模式嗎？目前畫面上的示範資料會保留下來，" +
+      "連線網址會接回來——<b>那會把示範資料上傳到雲端</b>，請先確認這不是你要的。";
+  showDialog("結束示範", "", body, [
+    [s ? "結束並還原" : "仍要結束（有風險）", "btn btn-seal", () => {
+      closeDialog();
+      if (s) { doRestoreRescueNow(s); return; }
+      DB.prefs.demoMode = false;
+      DB.endpoint = DB.prefs.epStash || ""; DB.prefs.epStash = "";
+      DB.prefs.joined = "";                         /* 沒有備份 → 重新走首次連線確認 */
+      saveLocal(); renderHead(); Remote.start();
+    }],
+    ["繼續看示範", "btn btn-ghost", closeDialog]
+  ]);
+}
+
+/* 結束示範時直接還原，不再多問一次 */
+function doRestoreRescueNow(s) {
+  const prefs = DB.prefs;
+  DB = Object.assign(blankDB(), s.data);
+  DB.prefs = prefs;
+  DB.prefs.demoMode = false;
+  DB.prefs.epStash = "";
+  DB.endpoint = s.ep || "";
+  markJoined();
+  try { localStorage.removeItem(RESCUE_KEY()); } catch (e) {}
+  setupDirty = false;
+  saveLocal();
+  cur = today(); renderHead(); renderRescue(); renderAll();
+  if (view === "view-setup") fillSetup(true);
+  Remote.start();
+  note("已結束示範，資料與連線都回來了", "seal");
 }
 
 function loadDemo() {
@@ -3607,7 +3831,9 @@ function loadDemo() {
     items: [{ id: uid("i"), text: "數習 P.22", done: true },
             { id: uid("i"), text: "作文一篇", done: false }] };
   if (b) d.watch.push(b.id);
-  commit();
+  saveLocal();
+  if (!DB.prefs.demoMode) Remote.schedule();   /* 示範模式一律不上傳 */
+  renderHead(); renderAll();
   note("示範資料已載入，可自由試用", "gov");
   switchView("view-board");
 }
@@ -3722,7 +3948,10 @@ function bind() {
   });
 
   $("#btn-newterm").addEventListener("click", newTerm);
-  $("#btn-demo").addEventListener("click", loadDemo);
+  $("#btn-demo").addEventListener("click", askDemo);
+  $("#btn-rescue").addEventListener("click", doRestoreRescue);
+  $("#btn-exitdemo").addEventListener("click", exitDemo);
+  $("#demochip").addEventListener("click", exitDemo);
 
   $("#veil").addEventListener("click", e => { if (e.target.id === "veil") closeDialog(); });
   $("#finale").addEventListener("click", closeFinale);
@@ -3839,6 +4068,7 @@ function boot() {
   applyLex();
   applySkin();
   bind();
+  renderRescue();
   renderHead();
 
   let start = "view-month";

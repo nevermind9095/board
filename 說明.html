@@ -332,6 +332,18 @@ td code{background:rgba(255,255,255,.85)}
 </div>
 
 
+<h3>想給別人看看、或自己試玩</h3>
+<p>設定頁的<b>「載入示範資料」</b>會把畫面換成 24 位假學生的樣本。<br>
+如果你班上<b>已經有資料</b>，按下去不會直接覆蓋，而是先問你一次，然後切換成
+<b>示範模式</b>：</p>
+<ul class="plain">
+  <li>進去之前會<b>自動存一份復原點</b>。</li>
+  <li>如果你有接雲端，連線會<b>暫時中斷</b>——示範期間怎麼亂點，
+      雲端和其他電腦上的班級<b>都不會被動到</b>。</li>
+  <li>畫面右上角會出現橘色的<b>「示範模式　點此還原」</b>。看完點它，
+      資料和連線就整份回來了。</li>
+</ul>
+
 <h2><span class="no">3</span>非常重要：記得備份</h2>
 
 <div class="warn">
@@ -340,6 +352,18 @@ td code{background:rgba(255,255,255,.85)}
   關掉分頁、關機、隔天再開，資料都還在，這沒問題。<br>
   但是——<b>換一台電腦、換一個瀏覽器、或是有人清理了瀏覽紀錄，資料就沒了</b>，
   而且救不回來。
+</div>
+
+<div class="tip">
+  <span class="lb">按錯了還有一次機會</span>
+  「載入示範資料」、「新學年重新建檔」、「匯入備份檔」這三個會整份換掉資料的動作，
+  程式都會<b>先自動存一個復原點</b>。<br>
+  按完之後如果發現不對，回到「設定 → 資料保存」，會看到一條金色的
+  <b>「有一份可以復原的紀錄」</b>，按<b>「復原成這一份」</b>就整份救回來，
+  接著雲端也會跟著回到那一版。<br>
+  復原之後還會再存一個新的復原點，所以就算復原錯了也能再換回去。<br>
+  不過復原點只有<b>最近一次</b>，而且一樣存在這台電腦的瀏覽器裡——
+  它是救急用的，<b>取代不了每週備份</b>。
 </div>
 
 <p>所以請養成習慣：<b>每個禮拜五</b>，到「設定 → 資料保存」按一下
@@ -390,6 +414,11 @@ td code{background:rgba(255,255,255,.85)}
   <div class="a">先確認是不是<b>換了一台電腦或換了瀏覽器</b>——資料不會跟著人跑。
     如果是同一台同一個瀏覽器卻不見了，可能是瀏覽器被清理過，
     這時候只能靠備份檔還原。</div>
+</div>
+<div class="qa">
+  <div class="q">不小心把資料弄不見了（按到示範資料、重新建檔、匯入錯的檔）</div>
+  <div class="a">到「設定 → 資料保存」，金色那一條按<b>「復原成這一份」</b>。<br>
+    如果是示範模式，直接點右上角橘色的<b>「示範模式　點此還原」</b>更快。</div>
 </div>
 <div class="qa">
   <div class="q">不小心按到「新學年重新建檔」</div>
@@ -501,6 +530,8 @@ var ACCESS_KEY = '';
 var PROP_FILE = 'BOARD_FILE_ID';
 var PROP_REV  = 'BOARD_REV';
 var DATA_NAME = '業務進度板_資料.json';
+var PREV_NAME = '業務進度板_資料_前一版.json';
+var PROP_PREV = 'BOARD_PREV_ID';
 var TZ        = 'Asia/Taipei';
 var LOCK_MS   = 25000;
 
@@ -571,9 +602,9 @@ function todayStr_() {
    讀寫
    ================================================================== */
 
-function dataFile_(createIfMissing) {
+function fileByProp_(propKey, name, createIfMissing) {
   var props = PropertiesService.getScriptProperties();
-  var id = props.getProperty(PROP_FILE);
+  var id = props.getProperty(propKey);
   if (id) {
     try { return DriveApp.getFileById(id); } catch (err) { /* 檔案被刪掉了 */ }
   }
@@ -581,9 +612,19 @@ function dataFile_(createIfMissing) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var parents = DriveApp.getFileById(ss.getId()).getParents();
   var folder = parents.hasNext() ? parents.next() : DriveApp.getRootFolder();
-  var f = folder.createFile(DATA_NAME, '{}', 'application/json');
-  props.setProperty(PROP_FILE, f.getId());
+  var f = folder.createFile(name, '{}', 'application/json');
+  props.setProperty(propKey, f.getId());
   return f;
+}
+
+function dataFile_(createIfMissing) {
+  return fileByProp_(PROP_FILE, DATA_NAME, createIfMissing);
+}
+
+/* 覆蓋前的上一版。萬一有人在某台電腦上誤按「載入示範資料」之類的動作，
+   把整個班級洗掉又同步上來，可以從試算表選單整份救回去。 */
+function prevFile_(createIfMissing) {
+  return fileByProp_(PROP_PREV, PREV_NAME, createIfMissing);
 }
 
 function read_() {
@@ -615,6 +656,18 @@ function write_(body) {
       return { ok: false, conflict: true, rev: cur.rev, data: cur.data };
     }
     if (!body.data || !body.data.students) return { ok: false, error: 'empty data' };
+
+    /* 先把即將被覆蓋的內容抄一份到「前一版」，再寫入新的 */
+    try {
+      var old = dataFile_(false);
+      if (old) {
+        prevFile_(true).setContent(JSON.stringify({
+          rev: rev,
+          savedAt: Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd HH:mm:ss'),
+          data: JSON.parse(old.getBlob().getDataAsString('UTF-8'))
+        }));
+      }
+    } catch (errPrev) { /* 留存失敗不影響正常寫入 */ }
 
     dataFile_(true).setContent(JSON.stringify(body.data));
     rev = rev + 1;
@@ -756,6 +809,7 @@ function onOpen() {
     .addItem('更新檢視表', 'rebuildView')
     .addSeparator()
     .addItem('檢查安裝狀態', 'checkSetup')
+    .addItem('還原雲端前一版', 'restorePrev')
     .addToUi();
 }
 
@@ -775,6 +829,60 @@ function checkSetup() {
            '\n已建檔天數：' + Object.keys(r.data.days || {}).length +
            '\n家長檢視：' + (r.data.prefs &amp;&amp; r.data.prefs.parent ? '已啟用' : '關閉') +
            '\n最後更新：' + stamp_());
+}
+
+/* 從選單執行：把雲端資料整份退回上一版。
+   例如某台電腦誤按了會清空資料的動作、又同步上來的時候。 */
+function restorePrev() {
+  var ui = SpreadsheetApp.getUi();
+  var pf = prevFile_(false);
+  if (!pf) { ui.alert('目前沒有可以還原的前一版。'); return; }
+
+  var snap;
+  try { snap = JSON.parse(pf.getBlob().getDataAsString('UTF-8')); }
+  catch (err) { ui.alert('前一版的檔案讀不出來。'); return; }
+  if (!snap || !snap.data || !snap.data.students) {
+    ui.alert('目前沒有可以還原的前一版。'); return;
+  }
+
+  var cur = read_();
+  var nOld = (snap.data.students.list || []).length;
+  var dOld = Object.keys(snap.data.days || {}).length;
+  var nNow = cur.data ? (cur.data.students.list || []).length : 0;
+  var dNow = cur.data ? Object.keys(cur.data.days || {}).length : 0;
+
+  var ans = ui.alert(
+    '還原雲端前一版',
+    '目前雲端：' + nNow + ' 人、' + dNow + ' 個工作日\n' +
+    '前一版：　' + nOld + ' 人、' + dOld + ' 個工作日' +
+    '（存於 ' + (snap.savedAt || '未知時間') + '）\n\n' +
+    '要把雲端還原成前一版嗎？\n' +
+    '還原後，各台電腦下次同步就會拿到這一版。',
+    ui.ButtonSet.YES_NO);
+  if (ans !== ui.Button.YES) return;
+
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(LOCK_MS)) { ui.alert('系統忙碌中，請稍後再試一次。'); return; }
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var rev = Number(props.getProperty(PROP_REV) || 0);
+    /* 把「現在這一版」換到前一版的位置，這樣還原本身也可以再還原一次 */
+    if (cur.data) {
+      pf.setContent(JSON.stringify({
+        rev: rev,
+        savedAt: Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd HH:mm:ss'),
+        data: cur.data
+      }));
+    }
+    dataFile_(true).setContent(JSON.stringify(snap.data));
+    rev = rev + 1;
+    props.setProperty(PROP_REV, String(rev));
+    noteStatus_(snap.data, rev);
+  } finally {
+    lock.releaseLock();
+  }
+  ui.alert('已還原　' + nOld + ' 人、' + dOld + ' 個工作日。\n\n' +
+           '請到各台電腦按一下右上角的狀態標記（或重新整理）取得新版本。');
 }
 
 function rebuildView() {
@@ -1084,6 +1192,15 @@ function buildOpen_(data) {
     如果已經發生了：在<b>原本那台</b>電腦上「設定 → 資料保存 → 匯入備份檔」，
     把之前匯出的備份檔讀回來，再讓它上傳一次就會蓋回去。
     平常有按週五備份的習慣，這種事就救得回來。</div>
+</div>
+<div class="qa">
+  <div class="q">雲端上的資料被某台電腦洗掉了，怎麼救</div>
+  <div class="a">三個地方都可以救，由近而遠：<br>
+    一、<b>出事的那台電腦</b>：「設定 → 資料保存」按「復原成這一份」，救回來會自動傳上去。<br>
+    二、<b>試算表</b>：打開你的 Google 試算表，上方選單
+    <b>「業務進度板 → 還原雲端前一版」</b>。程式每次覆蓋雲端之前，
+    都會自動把前一版另存一份，這裡可以整份退回去。還原完請各台電腦重新整理一次。<br>
+    三、<b>你的備份檔</b>：任何一台電腦「匯入備份檔」，再讓它上傳一次。</div>
 </div>
 <div class="qa">
   <div class="q">兩台電腦同時在改，會不會打架</div>
