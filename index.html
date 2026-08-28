@@ -1019,6 +1019,19 @@ textarea{min-height:132px}
             </label>
             <input type="text" id="in-endpoint" placeholder="https://script.google.com/macros/s/.../exec">
           </div>
+          <div class="field" style="margin-top:12px">
+            <label>同步方式
+              <span class="hint">連線設定好之後才有作用</span>
+            </label>
+            <select id="in-sync">
+              <option value="auto">自動同步　│　一改動就上傳，其他電腦約 20 秒內看到（建議）</option>
+              <option value="manual">手動同步　│　平常只存這台電腦，按右上角的狀態章才上傳</option>
+            </select>
+            <div class="dlg-note">
+              手動模式適合網路不穩的教室。<b>要注意：沒按同步之前，家長頁和其他電腦看到的還是舊資料。</b>
+              有未同步的變更時，右上角會變成橘色的「⟳ 有未同步的變更」，點一下就送出。
+            </div>
+          </div>
           <div class="dlg-note">
             <b>留白＝只存在這台電腦</b>，程式一樣完整可用，不需要任何設定。<br>
             填入網址後，這台電腦的紀錄會與雲端試算表同步，其他電腦貼上同一段網址就能一起編輯。
@@ -1726,7 +1739,7 @@ function blankDB() {
     students: { list: [], ts: now() },
     days:     {},
     flags:    {},
-    prefs:    { briefZoom: 1, muted: false, lex: "corp", parent: false },
+    prefs:    { briefZoom: 1, muted: false, lex: "corp", parent: false, sync: "auto" },
     endpoint: ""
   };
 }
@@ -1791,7 +1804,7 @@ function loadLocal() {
     DB.students = Object.assign({ list: [], ts: 0 }, DB.students);
     DB.days     = DB.days || {};
     DB.flags    = DB.flags || {};
-    DB.prefs    = Object.assign({ briefZoom: 1, muted: false, lex: "corp", parent: false }, DB.prefs);
+    DB.prefs    = Object.assign({ briefZoom: 1, muted: false, lex: "corp", parent: false, sync: "auto" }, DB.prefs);
     return true;
   } catch (e) {
     /* 絕不自動清空資料 —— 保留原始字串供人工救援 */
@@ -1824,8 +1837,15 @@ const Remote = {
     try { return await this.call({ action: "ping" }); } catch (e) { return null; }
   },
 
-  async pull() {
+  get uiBusy() {
+    /* 對話框或通知單開著時，不要在背景把資料換掉 */
+    return $("#veil").classList.contains("on") ||
+           !$("#printsheet").classList.contains("hide");
+  },
+
+  async pull(force) {
     if (!this.active) return;
+    if (!force && this.uiBusy) return;
     const r = await this.call({ action: "get" });
     if (r && r.ok && r.data) {
       DB = mergeDB(DB, r.data);
@@ -1845,9 +1865,12 @@ const Remote = {
     setLink("live", "雲端同步中");
   },
 
+  get manual() { return (DB.prefs && DB.prefs.sync) === "manual"; },
+
   schedule() {
     if (!this.active) return;
     this.dirty = true;
+    if (this.manual) { showLink(); return; }      /* 手動模式：等老師自己按 */
     clearTimeout(this.timer);
     this.timer = setTimeout(() => this.push(), 2200);
   },
@@ -1858,7 +1881,7 @@ const Remote = {
     setLink("live", "上傳中…");
     try {
       const r = await this.call({ action: "put", rev: this.rev, data: DB });
-      if (r && r.ok) { this.rev = r.rev; this.dirty = false; setLink("live", "雲端同步中"); }
+      if (r && r.ok) { this.rev = r.rev; this.dirty = false; showLink(); }
       else if (r && r.conflict && r.data) {
         DB = mergeDB(DB, r.data); saveLocal(); renderAll();
         this.rev = r.rev; this.busy = false;
@@ -1871,12 +1894,30 @@ const Remote = {
     this.busy = false;
   },
 
+  /* 手動按下「同步」：先送出去、再抓回來 */
+  async syncNow() {
+    if (!this.active) { switchView("view-setup"); return; }
+    setLink("live", "同步中…");
+    try {
+      if (this.dirty) await this.push();
+      await this.pull(true);
+      showLink();
+      note("已與雲端同步", "gov");
+    } catch (e) {
+      setLink("warn", "同步失敗");
+      note("同步失敗，資料仍保留在這台電腦", "seal");
+    }
+  },
+
   start() {
     clearInterval(this.poll);
     if (!this.active) { setLink("local", "本機保存"); return; }
     setLink("live", "連線中…");
-    this.pull().catch(() => setLink("warn", "連線失敗"));
-    this.poll = setInterval(() => { if (!this.dirty && !this.busy) this.pull().catch(() => {}); }, 20000);
+    this.pull(true).catch(() => setLink("warn", "連線失敗"));
+    if (this.manual) return;                       /* 手動模式不自動輪詢 */
+    this.poll = setInterval(() => {
+      if (!this.dirty && !this.busy) this.pull().catch(() => {});
+    }, 20000);
   }
 };
 
@@ -1957,6 +1998,16 @@ function commit(opts) {
   saveLocal();
   Remote.schedule();
   if (!opts || opts.render !== false) renderAll();
+}
+
+function showLink() {
+  if (!Remote.active) { setLink("local", "本機保存"); return; }
+  if (Remote.manual) {
+    if (Remote.dirty) setLink("warn", "⟳ 有未同步的變更");
+    else setLink("live", "已同步（手動）");
+  } else {
+    setLink("live", "雲端同步中");
+  }
 }
 
 function setLink(kind, text) {
@@ -2572,8 +2623,11 @@ function openDocket(sid) {
       t.className = "txt"; t.textContent = it.text;
       row.appendChild(b); row.appendChild(t);
       row.addEventListener("click", () => {
-        it.done = !it.done; f.ts = now();
-        Snd.play(it.done ? "stamp" : "lift");
+        const cur_f = DB.flags[sid];
+        if (!cur_f || !cur_f.items || !cur_f.items[i]) { openDocket(sid); return; }
+        cur_f.items[i].done = !cur_f.items[i].done;
+        cur_f.ts = now();
+        Snd.play(cur_f.items[i].done ? "stamp" : "lift");
         saveLocal(); Remote.schedule();
         openDocket(sid); renderBoard();
       });
@@ -2612,11 +2666,13 @@ function editDocket(sid) {
   body.appendChild(n);
   showDialog("編輯" + LEX.fixWord + "清單：" + s.name, "", body, [
     ["儲存", "btn btn-seal", () => {
+      const f2 = DB.flags[sid];
+      if (!f2) { closeDialog(); return; }
       const old = {};
-      (f.items || []).forEach(i => { if (i.done) old[i.text] = 1; });
-      f.items = ta.value.split("\n").map(x => x.trim()).filter(Boolean)
+      (f2.items || []).forEach(i => { if (i.done) old[i.text] = 1; });
+      f2.items = ta.value.split("\n").map(x => x.trim()).filter(Boolean)
                   .map(t => ({ id: uid("i"), text: t, done: !!old[t] }));
-      f.ts = now();
+      f2.ts = now();
       saveLocal(); Remote.schedule();
       openDocket(sid); renderBoard();
     }],
@@ -2629,14 +2685,14 @@ function editDocket(sid) {
    互動：派工單編輯
    ================================================================ */
 function editBlock(kind) {
-  const d = day(cur, true);
+  const d0 = day(cur, true);          /* 只用來把現有內容填進輸入框 */
   const isNew = kind === "new";
   const body = document.createElement("div");
   const ta = document.createElement("textarea");
   ta.spellcheck = false; ta.style.minHeight = "220px";
   ta.value = isNew
-    ? d.notes.map(n => (n.flag ? "*" : "") + n.text).join("\n")
-    : d.cases.map(k => k.text).join("\n");
+    ? d0.notes.map(n => (n.flag ? "*" : "") + n.text).join("\n")
+    : d0.cases.map(k => k.text).join("\n");
   ta.placeholder = isNew
     ? "一行一項，學生要抄進聯絡簿的內容\n例：\n國語 L5 生字二行\n數習 P.30～31\n*明天帶美勞用具"
     : "一行一項，今天批改發回、要完成訂正送核的作業\n例：\n數學習作 P.28\n國語聽寫";
@@ -2651,6 +2707,8 @@ function editBlock(kind) {
   showDialog("編輯" + (isNew ? LEX.newCap : LEX.fixCap),
     cur + "（" + DOW[dowOf(cur)] + "）", body, [
     ["儲存", "btn btn-seal", () => {
+      /* 重新取一次：對話框開著的期間，雲端同步可能已經換掉整份資料 */
+      const d = day(cur, true);
       const lines = ta.value.split("\n").map(x => x.trim()).filter(Boolean);
       if (isNew) {
         d.notes = lines.map(l => l.startsWith("*")
@@ -2782,6 +2840,7 @@ function fillSetup() {
   $("#in-teacher").value = DB.org.teacher || "";
   $("#in-endpoint").value = DB.endpoint || "";
   $("#in-lex").value = DB.prefs.lex || "corp";
+  $("#in-sync").value = DB.prefs.sync || "auto";
   $("#in-parent-on").checked = !!DB.prefs.parent;
   renderCodes();
   $("#in-roster").value = students().slice()
@@ -2847,8 +2906,10 @@ function saveSetup() {
   DB.prefs.parent = $("#in-parent-on").checked;
 
   const ep = $("#in-endpoint").value.trim();
-  const changed = ep !== (DB.endpoint || "");
+  const syncMode = $("#in-sync").value;
+  const changed = ep !== (DB.endpoint || "") || syncMode !== (DB.prefs.sync || "auto");
   DB.endpoint = ep;
+  DB.prefs.sync = syncMode;
 
   Snd.play("stamp");
   commit();
@@ -3065,7 +3126,7 @@ function importData(file) {
     showDialog("確認匯入", "", body, [
       ["確定匯入", "btn btn-seal", () => {
         DB = Object.assign(blankDB(), p);
-        DB.prefs = Object.assign({ briefZoom: 1, muted: false, lex: "corp", parent: false }, DB.prefs);
+        DB.prefs = Object.assign({ briefZoom: 1, muted: false, lex: "corp", parent: false, sync: "auto" }, DB.prefs);
         closeDialog(); commit();
         cur = today(); renderHead(); switchView("view-month");
         note("匯入完成", "gov");
@@ -3255,16 +3316,25 @@ function bind() {
   });
 
   $("#linkchip").addEventListener("click", () => {
+    if (Remote.active) { Remote.syncNow(); return; }
     switchView("view-setup");
     setTimeout(() => $("#in-endpoint").focus(), 120);
   });
 
   document.addEventListener("keydown", e => {
+    /* Esc 隨時都能關閉視窗，就算游標正在輸入框裡 */
+    if (e.key === "Escape") { closeDialog(); closeFinale(); closeSlips(); return; }
     if (e.target.matches("input,textarea,select")) return;
-    if (e.key === "Escape") { closeDialog(); closeFinale(); closeSlips(); }
     if (e.key === "ArrowLeft"  && view !== "view-month") $("#day-prev").click();
     if (e.key === "ArrowRight" && view !== "view-month") $("#day-next").click();
     if (e.key >= "1" && e.key <= "4") $$(".tab")[Number(e.key) - 1].click();
+  });
+
+  /* 手動模式下還沒同步就要關掉視窗時，攔一下 */
+  window.addEventListener("beforeunload", e => {
+    if (Remote.active && Remote.manual && Remote.dirty) {
+      e.preventDefault(); e.returnValue = "";
+    }
   });
 
   /* 跨分頁同步（同一台電腦開兩個視窗） */
