@@ -1779,6 +1779,12 @@ function shiftWork(s, dir) {
 function prevWork(s) { return shiftWork(s, -1); }
 
 function esc(t) { return String(t == null ? "" : t); }
+/* 要塞進 innerHTML 的字串一律先過這個（班級名稱、學生姓名都是老師自己打的） */
+function escHtml(t) {
+  return String(t == null ? "" : t)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
 
 /* ---------------------------------------------------------------- 音效 */
 const Snd = {
@@ -2013,7 +2019,7 @@ function loadLocal() {
 
 /* ------------------------------------------------------- 遠端同步 */
 const Remote = {
-  busy: false, timer: null, dirty: false, rev: 0,
+  busy: false, timer: null, dirty: false, rev: 0, joining: false, poll: null,
   get url() { return (DB.endpoint || "").trim(); },
   get active() { return /^https:\/\/script\.google\.com\//.test(this.url); },
 
@@ -2043,19 +2049,29 @@ const Remote = {
     return false;
   },
 
+  /* 這台電腦還沒跟這個網址「對過帳」——第一次連上去，不可以直接合併，
+     否則新電腦上的示範資料會因為時間比較新而蓋掉雲端上整個班級 */
+  needsJoin() {
+    return ((DB.prefs && DB.prefs.joined) || "") !== (DB.endpoint || "").trim();
+  },
+
   async pull(force) {
     if (!this.active) return;
     if (!force && this.uiBusy) return;
+    if (this.joining) return;
     const r = await this.call({ action: "get" });
     if (r && r.ok && r.data) {
+      if (this.needsJoin()) { this.askJoin(r); return; }
       DB = mergeDB(DB, r.data);
       this.rev = r.rev || 0;
       saveLocal();
       renderAll();
       if (view === "view-setup") fillSetup();
     } else if (r && r.ok && !r.data) {
-      /* 雲端還是空的 —— 把這台電腦現有的紀錄當成第一版送上去 */
+      /* 雲端還是空的 —— 這台就是第一台，把現有紀錄當成第一版送上去 */
       this.rev = r.rev || 0;
+      markJoined();
+      saveLocal();
       if (students().length) {
         setLink("live", "首次上傳…");
         await this.push();
@@ -2063,6 +2079,85 @@ const Remote = {
       }
     }
     setLink("live", "雲端同步中");
+  },
+
+  /* ---- 第一次連上一個已經有資料的雲端：先問清楚要保留哪一份 ---- */
+  askJoin(r) {
+    this.joining = true;
+    clearTimeout(this.timer);
+    setLink("warn", "待確認");
+
+    const mine = localSummary(), theirs = cloudSummary(r.data);
+
+    /* 這台電腦根本還沒建過任何東西 —— 不用問，直接把雲端的搬下來 */
+    if (!mine.people && !mine.days) {
+      this.adoptCloud(r);
+      note("已載入雲端上的班級資料　" + theirs.people + " 人", "gov");
+      return;
+    }
+
+    const body = document.createElement("div");
+    body.className = "dlg-note"; body.style.fontSize = "1rem";
+    body.innerHTML =
+      "這個連線網址上<b>已經有一份班級資料</b>了，而這台電腦上也有一份。<br>" +
+      "兩份不會自動合併，請選一份留下來：" +
+      "<div style='display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px'>" +
+        joinCard("雲端上的", theirs, true) +
+        joinCard("這台電腦上的", mine, false) +
+      "</div>" +
+      "<div style='margin-top:10px'>如果這台是要<b>加入既有班級</b>的第二台電腦，" +
+      "請選<b>「用雲端的」</b>——這台上面的示範資料或舊資料才不會把班級蓋掉。</div>";
+
+    showDialog("要用哪一份資料？", "首次連線", body, [
+      ["用雲端的（建議）", "btn btn-seal", () => this.adoptCloud(r)],
+      ["用這台電腦的", "btn", () => this.confirmKeepLocal(r, mine, theirs)],
+      ["先不要連", "btn btn-ghost", () => this.cancelJoin()]
+    ]);
+  },
+
+  adoptCloud(r) {
+    const prefs = DB.prefs, ep = DB.endpoint;
+    DB = Object.assign(blankDB(), r.data);
+    DB.prefs = prefs; DB.endpoint = ep;
+    markJoined();
+    this.rev = r.rev || 0; this.dirty = false; this.joining = false;
+    saveLocal();
+    setupDirty = false;
+    closeDialog();
+    renderHead(); renderAll();
+    if (view === "view-setup") fillSetup(true);
+    showLink();
+  },
+
+  confirmKeepLocal(r, mine, theirs) {
+    const body = document.createElement("div");
+    body.className = "dlg-note"; body.style.fontSize = "1rem";
+    body.innerHTML =
+      "確定要用<b>這台電腦</b>的資料嗎？<br><br>" +
+      "雲端上原本那份（<b>" + theirs.people + " 人、" + theirs.days + " 個工作日</b>）" +
+      "會被<b>整份覆蓋刪掉</b>，其他老師或其他電腦上看到的也會一起變成這一份。<br><br>" +
+      "只有在「這台才是正本、雲端那份是誤傳的」時候才選這個。";
+    showDialog("確認覆蓋雲端", "無法復原", body, [
+      ["確定覆蓋", "btn btn-seal", async () => {
+        markJoined();
+        this.rev = r.rev || 0; this.joining = false;
+        saveLocal(); closeDialog();
+        this.dirty = true;
+        await this.push();
+        note("已用這台電腦的資料覆蓋雲端", "seal");
+      }],
+      ["回上一步", "btn btn-ghost", () => this.askJoin(r)]
+    ]);
+  },
+
+  cancelJoin() {
+    this.joining = false;
+    DB.endpoint = ""; DB.prefs.joined = "";
+    clearInterval(this.poll);
+    saveLocal(); closeDialog();
+    if (view === "view-setup") fillSetup(true);
+    setLink("local", "本機保存");
+    note("先不連雲端，資料仍保留在這台電腦", "gov");
   },
 
   get manual() { return (DB.prefs && DB.prefs.sync) === "manual"; },
@@ -2077,6 +2172,8 @@ const Remote = {
 
   async push() {
     if (!this.active || this.busy) return;
+    /* 還沒確認要用哪一份之前，一個位元組都不准往上送 */
+    if (this.joining || this.needsJoin()) return;
     this.busy = true;
     setLink("live", "上傳中…");
     try {
@@ -2097,6 +2194,8 @@ const Remote = {
   /* 手動按下「同步」：先送出去、再抓回來 */
   async syncNow() {
     if (!this.active) { switchView("view-setup"); return; }
+    if (this.joining) return;
+    if (this.needsJoin()) { await this.pull(true); return; }
     setLink("live", "同步中…");
     try {
       if (this.dirty) await this.push();
@@ -2111,6 +2210,7 @@ const Remote = {
 
   start() {
     clearInterval(this.poll);
+    this.joining = false;
     if (!this.active) { setLink("local", "本機保存"); return; }
     setLink("live", "連線中…");
     this.pull(true).catch(() => setLink("warn", "連線失敗"));
@@ -2120,6 +2220,49 @@ const Remote = {
     }, 20000);
   }
 };
+
+/* 記下「這台電腦已經跟這個網址對過帳了」，之後才走正常的合併 */
+function markJoined() {
+  DB.prefs = DB.prefs || {};
+  DB.prefs.joined = (DB.endpoint || "").trim();
+}
+
+/* 一份資料的規模，用來讓老師分辨兩邊哪一份才是正本 */
+function summarize(db) {
+  const list = (db && db.students && db.students.list) || [];
+  const days = Object.keys((db && db.days) || {}).filter(ds => {
+    const d = db.days[ds];
+    return d && ((d.notes || []).length || (d.cases || []).length ||
+                 Object.keys(d.done || {}).length);
+  });
+  days.sort();
+  const flags = Object.values((db && db.flags) || {}).filter(f => f && !f.gone).length;
+  return {
+    people: list.length,
+    days: days.length,
+    last: days.length ? days[days.length - 1] : "",
+    flags: flags,
+    org: (db && db.org && db.org.name) || "",
+    names: list.slice(0, 3).map(s => s.name).join("、")
+  };
+}
+function localSummary() { return summarize(DB); }
+function cloudSummary(d) { return summarize(d); }
+
+function joinCard(title, s, hi) {
+  const box = "border:1.5px solid " + (hi ? "var(--seal)" : "var(--rule)") +
+              ";border-radius:var(--r-sm);padding:10px 12px;background:rgba(255,255,255,.55)";
+  return "<div style='" + box + "'>" +
+    "<div style='font-weight:900;color:" + (hi ? "var(--seal-deep)" : "var(--ink)") +
+      ";margin-bottom:4px'>" + escHtml(title) + "</div>" +
+    "<div style='font-size:.94rem;line-height:1.7'>" +
+      escHtml(s.org || "（未命名）") + "<br>" +
+      "<b>" + s.people + "</b> 人" +
+      (s.names ? "（" + escHtml(s.names) + (s.people > 3 ? "…" : "") + "）" : "") + "<br>" +
+      "<b>" + s.days + "</b> 個工作日的紀錄" +
+      (s.last ? "<br>最後一筆：" + escHtml(s.last) : "") +
+    "</div></div>";
+}
 
 /* 合併規則：以最後修改時間決定，逐「日」與逐「格」比對，
    兩台電腦編輯不同日期永遠不會互相覆蓋 */
@@ -2202,6 +2345,7 @@ function commit(opts) {
 
 function showLink() {
   if (!Remote.active) { setLink("local", "本機保存"); return; }
+  if (Remote.joining || Remote.needsJoin()) { setLink("warn", "待確認"); return; }
   if (Remote.manual) {
     if (Remote.dirty) setLink("warn", "⟳ 有未同步的變更");
     else setLink("live", "已同步（手動）");
@@ -3046,7 +3190,12 @@ function showDialog(title, no, bodyEl, buttons) {
   });
   $("#veil").classList.add("on");
 }
-function closeDialog() { $("#veil").classList.remove("on"); }
+function closeDialog() {
+  $("#veil").classList.remove("on");
+  /* 首次連線的詢問被 Esc 關掉時，視同「先不要連」，
+     不能讓它停在「待確認」又不能上傳的半吊子狀態 */
+  if (Remote.joining) Remote.cancelJoin();
+}
 
 /* ================================================================
    導覽
@@ -3392,8 +3541,12 @@ function importData(file) {
       Object.keys(p.days || {}).length + " 個工作日的紀錄。確定要匯入嗎？";
     showDialog("確認匯入", "", body, [
       ["確定匯入", "btn btn-seal", () => {
+        const epBefore = (DB.endpoint || "").trim();
         DB = Object.assign(blankDB(), p);
         DB.prefs = Object.assign({ briefZoom: 1, muted: false, lex: "corp", parent: false, sync: "auto", skin: "doc", party: "full" }, DB.prefs);
+        /* 同一個雲端就是刻意還原，直接覆蓋上去；
+           備份檔帶的是別的網址時，留給首次連線流程再問一次 */
+        if ((DB.endpoint || "").trim() === epBefore) markJoined();
         closeDialog(); commit();
         setupDirty = false; markSetupDirty();
         cur = today(); renderHead(); switchView("view-month");
@@ -3416,6 +3569,7 @@ function newTerm() {
       const org = DB.org, ep = DB.endpoint;
       setTimeout(() => {
         DB = blankDB(); DB.org = org; DB.org.ts = now(); DB.endpoint = ep;
+        markJoined();          /* 這是刻意清空，不是新電腦第一次連線 */
         closeDialog(); commit();
         cur = today(); renderHead(); setupDirty = false; switchView("view-setup"); fillSetup(true);
         note("已重新建檔，請重新建立員工名冊", "seal");
