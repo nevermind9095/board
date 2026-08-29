@@ -2513,7 +2513,10 @@ function dayStats(ds) {
   if (total) {
     students().forEach(s => d.cases.forEach(k => { if (isDone(d, s.id, k.id)) done++; }));
   }
-  return { total, done, cases: c, notes: d.notes.length, watch: (d.watch || []).length,
+  /* 只算名冊上還在的人。轉學生、改過名冊之後留下的舊代號要略過，
+     否則月曆會顯示「警示 1 人」，但簽核進度頁上根本找不到那個人 */
+  const watch = (d.watch || []).filter(id => student(id)).length;
+  return { total, done, cases: c, notes: d.notes.length, watch: watch,
            allClear: total > 0 && done === total };
 }
 
@@ -2586,6 +2589,7 @@ function renderMonth() {
     const wk = isWeekend(ds);
     const cell = document.createElement("div");
     cell.className = "cal-cell" + (wk ? " wk" : "") + (ds === td ? " today" : "");
+    cell.dataset.d = ds;
 
     const num = document.createElement("div");
     num.className = "cal-num"; num.textContent = i;
@@ -3426,6 +3430,26 @@ function parseRoster(text) {
   return out;
 }
 
+/* 名冊改過之後，把指向「已經不在名冊上」的舊代號清乾淨。
+   只在老師自己按下儲存設定時做，這時候這台電腦的名冊就是最新的版本。 */
+function pruneOrphans() {
+  let n = 0;
+  Object.keys(DB.days || {}).forEach(ds => {
+    const d = DB.days[ds];
+    if (!d || !d.watch || !d.watch.length) return;
+    const keep = d.watch.filter(id => student(id));
+    if (keep.length !== d.watch.length) { d.watch = keep; d.ts = now(); n++; }
+  });
+  Object.keys(DB.flags || {}).forEach(sid => {
+    const f = DB.flags[sid];
+    if (!f || f.gone) return;
+    if (student(sid)) return;
+    /* 留下「已銷號」的墓碑，其他電腦同步時才會跟著移除，而不是又長回來 */
+    f.gone = true; f.ts = now(); n++;
+  });
+  return n;
+}
+
 function saveSetup() {
   DB.org.name = $("#in-org").value.trim() || "業務進度板";
   DB.org.sub = $("#in-sub").value.trim();
@@ -3465,6 +3489,8 @@ function saveSetup() {
   const changed = ep !== (DB.endpoint || "") || syncMode !== (DB.prefs.sync || "auto");
   DB.endpoint = ep;
   DB.prefs.sync = syncMode;
+
+  pruneOrphans();
 
   setupDirty = false;
   markSetupDirty();
